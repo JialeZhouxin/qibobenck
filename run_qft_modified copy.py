@@ -73,4 +73,4 @@ def run_qft_modified(backend_name = "qibojit",platform_name = None):
 
     #print("\n模拟完成!")
 
-run_qft_modified("numpy")
+run_qft_modified("qibotn","qutensornet")

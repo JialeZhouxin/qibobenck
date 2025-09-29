@@ -1,21 +1,21 @@
 {
   "metadata": {
-    "generation_time": "2025-09-29T16:25:15.013653",
+    "generation_time": "2025-09-29T16:56:59.436997",
     "qibo_version": "0.2.21",
     "python_version": "3.12.0"
   },
   "results": {
     "numpy": {
       "execution_time": {
-        "mean": 7.812892055511474,
-        "std": 0.09807203316612775
+        "mean": 8.046971654891967,
+        "std": 0.2425358755881693
       },
       "memory_usage_mb": 6.0078125,
       "speedup": null,
       "correctness": "Passed",
-      "throughput_gates_per_sec": 104.95473304556214,
+      "throughput_gates_per_sec": 101.90168863108897,
       "jit_compilation_time": null,
-      "circuit_build_time": 0.43561577796936035,
+      "circuit_build_time": 0.43646788597106934,
       "circuit_parameters": {
         "nqubits": 18,
         "depth": 138,
@@ -34,15 +34,15 @@
     },
     "qibojit (numba)": {
       "execution_time": {
-        "mean": 0.3288448333740234,
-        "std": 0.015649031981659817
+        "mean": 0.37983903884887693,
+        "std": 0.07895658685534457
       },
       "memory_usage_mb": 6.0078125,
-      "speedup": 23.758597559065805,
+      "speedup": 21.18521487227526,
       "correctness": "Passed",
-      "throughput_gates_per_sec": 2493.5772643486957,
+      "throughput_gates_per_sec": 2158.8091694973086,
       "jit_compilation_time": null,
-      "circuit_build_time": 0.4436795711517334,
+      "circuit_build_time": 0.42869043350219727,
       "circuit_parameters": {
         "nqubits": 18,
         "depth": 138,
@@ -61,15 +61,15 @@
     },
     "qibotn (qutensornet)": {
       "execution_time": {
-        "mean": 0.9925294876098633,
-        "std": 0.04464332358280982
+        "mean": 0.978206205368042,
+        "std": 0.036312505713754516
       },
-      "memory_usage_mb": 4.671875,
-      "speedup": 7.871697670490282,
+      "memory_usage_mb": 4.6328125,
+      "speedup": 8.226252921657107,
       "correctness": "Passed",
-      "throughput_gates_per_sec": 826.1719276216809,
+      "throughput_gates_per_sec": 838.2690638232884,
       "jit_compilation_time": null,
-      "circuit_build_time": 0.5205607414245605,
+      "circuit_build_time": 0.4287245273590088,
       "circuit_parameters": {
         "nqubits": 18,
         "depth": 138,
@@ -88,15 +88,15 @@
     },
     "qiboml (jax)": {
       "execution_time": {
-        "mean": 3.2563292503356935,
-        "std": 0.03515504081995312
+        "mean": 3.2064027786254883,
+        "std": 0.045724981258307526
       },
-      "memory_usage_mb": 7.60546875,
-      "speedup": 2.399294252786645,
+      "memory_usage_mb": 8.47265625,
+      "speedup": 2.5096571486697377,
       "correctness": "Passed",
-      "throughput_gates_per_sec": 251.8172877989738,
+      "throughput_gates_per_sec": 255.73830133453018,
       "jit_compilation_time": null,
-      "circuit_build_time": 0.38781261444091797,
+      "circuit_build_time": 0.37276244163513184,
       "circuit_parameters": {
         "nqubits": 18,
         "depth": 138,
@@ -115,15 +115,15 @@
     },
     "qiboml (pytorch)": {
       "execution_time": {
-        "mean": 4.107703304290771,
-        "std": 2.8731223047946
+        "mean": 3.3242774963378907,
+        "std": 1.0719470349356515
       },
-      "memory_usage_mb": 2018.96484375,
-      "speedup": 1.9020098280589997,
+      "memory_usage_mb": 2019.3046875,
+      "speedup": 2.42066784850444,
       "correctness": "Passed",
-      "throughput_gates_per_sec": 199.62493375396784,
+      "throughput_gates_per_sec": 246.67014137758747,
       "jit_compilation_time": null,
-      "circuit_build_time": 0.5724847316741943,
+      "circuit_build_time": 0.5783357620239258,
       "circuit_parameters": {
         "nqubits": 18,
         "depth": 138,
@@ -142,15 +142,15 @@
     },
     "qiboml (tensorflow)": {
       "execution_time": {
-        "mean": 19.574423456192015,
-        "std": 0.082275923880836
+        "mean": 21.191646909713747,
+        "std": 1.4195348123749287
       },
-      "memory_usage_mb": 8.328125,
-      "speedup": 0.3991377867653112,
+      "memory_usage_mb": 8.53125,
+      "speedup": 0.3797237510220797,
       "correctness": "Passed",
-      "throughput_gates_per_sec": 41.891399858349736,
+      "throughput_gates_per_sec": 38.694491442481116,
       "jit_compilation_time": null,
-      "circuit_build_time": 0.7047317028045654,
+      "circuit_build_time": 0.6594233512878418,
       "circuit_parameters": {
         "nqubits": 18,
         "depth": 138,
