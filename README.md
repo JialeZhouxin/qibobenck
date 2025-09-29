@@ -29,7 +29,7 @@ qiboenv/
 
 根据测试结果，以下后端可以正常工作：
 
-1. **numpy** - 基础后端 (最快)
+1. **numpy** - 基础后端 
 2. **qibojit (numba)** - 使用 Numba 加速的后端
 3. **qibotn (qutensornet)** - 张量网络后端
 4. **qiboml (jax)** - 基于 JAX 的机器学习后端
