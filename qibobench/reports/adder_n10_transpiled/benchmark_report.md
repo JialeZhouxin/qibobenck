@@ -1,6 +1,6 @@
 # QASMBench电路基准测试报告: adder_n10_transpiled
 
-**生成时间**: 2025-10-09 14:08:25
+**生成时间**: 2025-10-09 16:41:59
 
 ## 测试电路参数
 
@@ -23,12 +23,13 @@
 
 | 后端 | 执行时间(秒) | 内存(MB) | 加速比 | 正确性 | 吞吐率(门/秒) |
 |------|-------------|----------|--------|--------|---------------|
-| numpy | 0.0120 ± 0.0009 | 0.0 | N/A | Passed (no baseline) | 13871 |
-| qibojit (numba) | 0.0034 ± 0.0010 | 0.0 | 3.55x | Passed (fidelity: 1.000000) | 49247 |
-| qibotn (qutensornet) | 0.1041 ± 0.0009 | 0.3 | 0.12x | Passed (fidelity: 1.000000) | 1604 |
-| qiboml (jax) | 0.0928 ± 0.0016 | 0.0 | 0.13x | Passed (fidelity: 1.000000) | 1800 |
-| qiboml (pytorch) | 0.0412 ± 0.0009 | 4.9 | 0.29x | Passed (fidelity: 1.000000) | 4056 |
-| qiboml (tensorflow) | 0.1497 ± 0.0071 | 0.0 | 0.08x | Passed (fidelity: 1.000000) | 1116 |
+| numpy | 0.0127 ± 0.0011 | 0.0 | N/A | Passed (no baseline) | 13158 |
+| qibojit (numba) | 0.0030 ± 0.0006 | 0.0 | 4.24x | Passed (fidelity: 1.000000) | 55814 |
+| qibotn (qutensornet) | 0.1192 ± 0.0063 | 0.3 | 0.11x | Passed (fidelity: 1.000000) | 1401 |
+| qiboml (jax) | 0.0925 ± 0.0024 | 0.0 | 0.14x | Passed (fidelity: 1.000000) | 1806 |
+| qiboml (pytorch) | 0.0457 ± 0.0023 | 5.1 | 0.28x | Passed (fidelity: 1.000000) | 3654 |
+| qiboml (tensorflow) | 0.1493 ± 0.0030 | 0.0 | 0.09x | Passed (fidelity: 1.000000) | 1119 |
+| qulacs | 0.0014 ± 0.0005 | 0.0 | 9.02x | Passed (fidelity: 1.000000) | 118668 |
 
 ## 测试环境
 
@@ -80,13 +81,22 @@
 - Backend: qiboml
 - Platform: tensorflow
 
+### qulacs 环境
+- CPU: Intel64 Family 6 Model 158 Stepping 9, GenuineIntel
+- RAM_GB: 15.909721374511719
+- Python: 3.12.0
+- Qibo: 0.2.21
+- Backend: qulacs
+- Platform: default
+
 ## 性能分析
 
 ### 性能排名（从优到劣）
-1. **qibojit (numba)** - 0.0034秒 (3.55x)
-2. **numpy** - 0.0120秒
-3. **qiboml (pytorch)** - 0.0412秒 (0.29x)
-4. **qiboml (jax)** - 0.0928秒 (0.13x)
-5. **qibotn (qutensornet)** - 0.1041秒 (0.12x)
-6. **qiboml (tensorflow)** - 0.1497秒 (0.08x)
+1. **qulacs** - 0.0014秒 (9.02x)
+2. **qibojit (numba)** - 0.0030秒 (4.24x)
+3. **numpy** - 0.0127秒
+4. **qiboml (pytorch)** - 0.0457秒 (0.28x)
+5. **qiboml (jax)** - 0.0925秒 (0.14x)
+6. **qibotn (qutensornet)** - 0.1192秒 (0.11x)
+7. **qiboml (tensorflow)** - 0.1493秒 (0.09x)
 

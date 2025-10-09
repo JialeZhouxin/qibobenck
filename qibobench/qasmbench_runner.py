@@ -437,7 +437,8 @@ class QASMBenchRunner:
             "qibotn (qutensornet)": {"backend_name": "qibotn", "platform_name": "qutensornet"},
             "qiboml (jax)": {"backend_name": "qiboml", "platform_name": "jax"},
             "qiboml (pytorch)": {"backend_name": "qiboml", "platform_name": "pytorch"},
-            "qiboml (tensorflow)": {"backend_name": "qiboml", "platform_name": "tensorflow"}
+            "qiboml (tensorflow)": {"backend_name": "qiboml", "platform_name": "tensorflow"},
+            "qulacs": {"backend_name": "qulacs", "platform_name": None}
         }
         
         # 首先运行numpy后端作为基准
