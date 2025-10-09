@@ -10,19 +10,7 @@ python qasmbench_runner.py --list
 
 ### 2. 运行特定电路的基准测试
 
-**方法一：使用电路名称（推荐）**
-```bash
-# 运行small/adder_n10电路
-python qasmbench_runner.py --circuit-name small/adder_n10
-
-# 运行medium/qft_n18电路  
-python qasmbench_runner.py --circuit-name medium/qft_n18
-
-# 运行large/ghz_n127电路
-python qasmbench_runner.py --circuit-name large/ghz_n127
-```
-
-**方法二：使用完整文件路径**
+**使用完整文件路径**
 ```bash
 # 使用完整路径运行电路
 python qasmbench_runner.py --circuit QASMBench/small/adder_n10/adder_n10_transpiled.qasm
@@ -37,8 +25,6 @@ cd qibobench
 
 ### 步骤2：运行基准测试
 ```bash
-# 使用电路名称（自动选择最佳文件）
-python qasmbench_runner.py --circuit-name small/adder_n10
 
 # 或者使用特定文件
 python qasmbench_runner.py --circuit QASMBench/small/adder_n10/adder_n10_transpiled.qasm

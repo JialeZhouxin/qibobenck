@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "generation_time": "2025-10-09T15:20:37.533835",
+    "circuit_name": "bigadder_n18_transpiled",
+    "qibo_version": "0.2.21",
+    "python_version": "3.12.0"
+  },
+  "results": {
+    "numpy": {
+      "execution_time": {
+        "mean": 2.7124077796936037,
+        "std": 0.22318285759284276
+      },
+      "memory_usage_mb": 4.00390625,
+      "speedup": null,
+      "correctness": "Passed (no baseline)",
+      "throughput_gates_per_sec": 122.40047476840044,
+      "jit_compilation_time": null,
+      "circuit_build_time": 0.1307830810546875,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 181,
+        "ngates": 332,
+        "source": ".\\QASMBench\\medium\\bigadder_n18\\bigadder_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "numpy",
+        "Platform": "default"
+      }
+    },
+    "qibojit (numba)": {
+      "execution_time": {
+        "mean": 0.08162736892700195,
+        "std": 0.010936563042497663
+      },
+      "memory_usage_mb": 4.00390625,
+      "speedup": 33.22914624529019,
+      "correctness": "Passed (fidelity: 1.000000)",
+      "throughput_gates_per_sec": 4067.2632765721296,
+      "jit_compilation_time": null,
+      "circuit_build_time": 0.30028223991394043,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 181,
+        "ngates": 332,
+        "source": ".\\QASMBench\\medium\\bigadder_n18\\bigadder_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "qibojit",
+        "Platform": "numba"
+      }
+    },
+    "qibotn (qutensornet)": {
+      "execution_time": {
+        "mean": 0.21325578689575195,
+        "std": 0.0027130131353073814
+      },
+      "memory_usage_mb": 4.578125,
+      "speedup": 12.719034822813686,
+      "correctness": "Passed (fidelity: 1.000000)",
+      "throughput_gates_per_sec": 1556.8159009082133,
+      "jit_compilation_time": null,
+      "circuit_build_time": 0.1673130989074707,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 181,
+        "ngates": 332,
+        "source": ".\\QASMBench\\medium\\bigadder_n18\\bigadder_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "qibotn",
+        "Platform": "qutensornet"
+      }
+    },
+    "qiboml (jax)": {
+      "execution_time": {
+        "mean": 1.2660588264465331,
+        "std": 0.048969498319261444
+      },
+      "memory_usage_mb": 7.16796875,
+      "speedup": 2.1424026459390997,
+      "correctness": "Passed (fidelity: 1.000000)",
+      "throughput_gates_per_sec": 262.2311010080231,
+      "jit_compilation_time": null,
+      "circuit_build_time": 0.12657546997070312,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 181,
+        "ngates": 332,
+        "source": ".\\QASMBench\\medium\\bigadder_n18\\bigadder_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "qiboml",
+        "Platform": "jax"
+      }
+    },
+    "qiboml (pytorch)": {
+      "execution_time": {
+        "mean": 0.8031731128692627,
+        "std": 0.12357495026253823
+      },
+      "memory_usage_mb": 661.98828125,
+      "speedup": 3.3771147667079817,
+      "correctness": "Passed (fidelity: 1.000000)",
+      "throughput_gates_per_sec": 413.36045079243286,
+      "jit_compilation_time": null,
+      "circuit_build_time": 0.13483691215515137,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 181,
+        "ngates": 332,
+        "source": ".\\QASMBench\\medium\\bigadder_n18\\bigadder_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "qiboml",
+        "Platform": "pytorch"
+      }
+    },
+    "qiboml (tensorflow)": {
+      "execution_time": {
+        "mean": 7.223893690109253,
+        "std": 0.40716680555503026
+      },
+      "memory_usage_mb": 4.03515625,
+      "speedup": 0.37547725590249953,
+      "correctness": "Passed (fidelity: 1.000000)",
+      "throughput_gates_per_sec": 45.95859438720213,
+      "jit_compilation_time": null,
+      "circuit_build_time": 0.3532102108001709,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 181,
+        "ngates": 332,
+        "source": ".\\QASMBench\\medium\\bigadder_n18\\bigadder_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "qiboml",
+        "Platform": "tensorflow"
+      }
+    }
+  }
+}

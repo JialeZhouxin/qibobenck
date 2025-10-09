@@ -22,9 +22,6 @@ python qasmbench_runner.py --list
 ### 2. 测试特定电路
 
 ```bash
-# 通过电路名称测试
-python qasmbench_runner.py --circuit-name medium/qft_n18
-
 # 通过文件路径测试
 python qasmbench_runner.py --circuit QASMBench/medium/qft_n18/qft_n18.qasm
 ```

@@ -1,45 +1,61 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python  # 指定Python解释器路径
+# -*- coding: utf-8 -*-  # 指定文件编码为UTF-8
 
 """
 QASMBench通用基准测试工具
 支持加载QASMBench中的任意电路进行Qibo后端性能测试
 """
 
-import time
-import sys
-import os
-import json
-import csv
-import platform
-import psutil
-import numpy as np
-from datetime import datetime
-from qibo import Circuit, gates, set_backend
-from qibo.ui import plot_circuit
-import numpy as np
-import torch
-import jax
-import tensorflow as tf
+import time  # 导入time模块，用于计时和性能测量
+import sys  # 导入sys模块，用于访问系统相关参数和功能
+import os  # 导入os模块，用于处理文件和目录操作
+import json  # 导入json模块，用于处理JSON格式的数据
+import csv  # 导入csv模块，用于处理CSV格式的数据
+import platform  # 导入platform模块，用于获取系统信息
+import psutil  # 导入psutil模块，用于系统资源监控
+import numpy as np  # 导入NumPy库，用于数值计算
+from datetime import datetime  # 导入datetime类，用于处理日期和时间
+from qibo import Circuit, gates, set_backend  # 从Qibo框架导入核心类和函数
+from qibo.ui import plot_circuit  # 从Qibo UI模块导入电路绘图函数
+import numpy as np  # 再次导入NumPy库（重复导入，可能是冗余的）
+import torch  # 导入PyTorch库，用于深度学习计算
+import jax  # 导入JAX库，用于高性能数值计算
+import tensorflow as tf  # 导入TensorFlow库，用于深度学习计算
 
 class QASMBenchConfig:
-    """QASMBench基准测试配置类"""
+    """QASMBench基准测试配置类
+    
+    该类用于存储和管理QASMBench基准测试的配置参数，
+    包括运行次数、输出格式、基准后端等设置。
+    """
     def __init__(self):
-        self.num_runs = 5  # 每个后端运行次数
-        self.warmup_runs = 1  # 预热运行次数
-        self.output_formats = ['csv', 'markdown', 'json']  # 输出格式
-        self.baseline_backend = "numpy"  # 基准后端
-        self.qasm_directory = "../QASMBench"  # QASMBench根目录
+        """初始化配置对象
+        
+        设置默认的基准测试配置参数。
+        """
+        self.num_runs = 5  # 每个后端正式运行的次数
+        self.warmup_runs = 1  # 预热运行的次数，用于JIT编译等
+        self.output_formats = ['csv', 'markdown', 'json']  # 支持的输出报告格式
+        self.baseline_backend = "numpy"  # 作为性能比较基准的后端
+        self.qasm_directory = "../QASMBench"  # QASMBench基准测试电路的根目录
 
 class QASMBenchMetrics:
-    """存储QASMBench基准测试指标"""
+    """存储QASMBench基准测试指标
+    
+    该类用于存储和量化基准测试的各种指标，
+    包括执行时间、内存使用、正确性验证等。
+    """
     def __init__(self):
+        """初始化指标对象
+        
+        创建并初始化所有指标的默认值。
+        """
         # 核心指标
-        self.execution_time_mean = None
-        self.execution_time_std = None
-        self.peak_memory_mb = None
-        self.speedup = None
-        self.correctness = "Unknown"
+        self.execution_time_mean = None  # 平均执行时间（秒）
+        self.execution_time_std = None  # 执行时间标准差（秒）
+        self.peak_memory_mb = None  # 峰值内存使用量（MB）
+        self.speedup = None  # 相对于基准后端的加速比
+        self.correctness = "Unknown"  # 正确性验证结果
         
         # 电路信息
         self.circuit_parameters = {}
