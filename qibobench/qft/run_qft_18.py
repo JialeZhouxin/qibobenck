@@ -242,13 +242,22 @@ class BenchmarkRunner:
     
     def validate_correctness(self, result, baseline_result=None):
         """验证计算结果的正确性"""
-        # 这里可以添加更复杂的验证逻辑
-        if result is None:
-            return "Failed"
-        elif hasattr(result, 'state') and callable(getattr(result, 'state')):
-            return "Passed"
-        else:
-            return "Unknown"
+        try:
+            if result is None:
+                return "Failed"
+            
+            # 检查是否有状态向量方法
+            if hasattr(result, 'state') and callable(getattr(result, 'state')):
+                state = result.state()
+                if state is not None and len(state) > 0:
+                    return "Passed"
+                else:
+                    return "Failed - Invalid state"
+            else:
+                return "Unknown - No state method"
+                
+        except Exception as e:
+            return f"Failed - {str(e)}"
     
     def run_benchmark_for_backend(self, backend_name, platform_name=None):
         """为特定后端运行基准测试"""

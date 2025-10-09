@@ -1,18 +1,10 @@
 # Qibo 后端基准测试报告
 
-**生成时间**: 2025-09-29 16:56:59
+**生成时间**: 2025-09-30 09:36:42
 
 ## 测试电路参数
 
 ### QFT (Quantum Fourier Transform) 电路
-
-| 参数 | 值 | 描述 |
-|------|----|------|
-| 电路类型 | QFT | 量子傅里叶变换电路 |
-| 量子比特数 | 18 | 电路的宽度 |
-| 电路深度 | 138 | 电路的层数 |
-| 门数量 | 820 | 总门操作数 |
-| 电路来源 | QASMBench/medium/qft_n18/qft_n18_transpiled.qasm | QASM文件路径 |
 
 ### 测试配置
 
@@ -34,94 +26,10 @@
 
 | 后端 | 执行时间(秒) | 内存(MB) | 加速比 | 正确性 | 吞吐率(门/秒) |
 |------|-------------|----------|--------|--------|---------------|
-| numpy | 8.0470 ± 0.2425 | 6.0 | N/A | Passed | 102 |
-| qibojit (numba) | 0.3798 ± 0.0790 | 6.0 | 21.19x | Passed | 2159 |
-| qibotn (qutensornet) | 0.9782 ± 0.0363 | 4.6 | 8.23x | Passed | 838 |
-| qiboml (jax) | 3.2064 ± 0.0457 | 8.5 | 2.51x | Passed | 256 |
-| qiboml (pytorch) | 3.3243 ± 1.0719 | 2019.3 | 2.42x | Passed | 247 |
-| qiboml (tensorflow) | 21.1916 ± 1.4195 | 8.5 | 0.38x | Passed | 39 |
 
 ## 测试环境
 
-### numpy 环境
-- CPU: Intel64 Family 6 Model 158 Stepping 9, GenuineIntel
-- RAM_GB: 15.909721374511719
-- Python: 3.12.0
-- Qibo: 0.2.21
-- Backend: numpy
-- Platform: default
-
-### qibojit (numba) 环境
-- CPU: Intel64 Family 6 Model 158 Stepping 9, GenuineIntel
-- RAM_GB: 15.909721374511719
-- Python: 3.12.0
-- Qibo: 0.2.21
-- Backend: qibojit
-- Platform: numba
-
-### qibotn (qutensornet) 环境
-- CPU: Intel64 Family 6 Model 158 Stepping 9, GenuineIntel
-- RAM_GB: 15.909721374511719
-- Python: 3.12.0
-- Qibo: 0.2.21
-- Backend: qibotn
-- Platform: qutensornet
-
-### qiboml (jax) 环境
-- CPU: Intel64 Family 6 Model 158 Stepping 9, GenuineIntel
-- RAM_GB: 15.909721374511719
-- Python: 3.12.0
-- Qibo: 0.2.21
-- Backend: qiboml
-- Platform: jax
-
-### qiboml (pytorch) 环境
-- CPU: Intel64 Family 6 Model 158 Stepping 9, GenuineIntel
-- RAM_GB: 15.909721374511719
-- Python: 3.12.0
-- Qibo: 0.2.21
-- Backend: qiboml
-- Platform: pytorch
-
-### qiboml (tensorflow) 环境
-- CPU: Intel64 Family 6 Model 158 Stepping 9, GenuineIntel
-- RAM_GB: 15.909721374511719
-- Python: 3.12.0
-- Qibo: 0.2.21
-- Backend: qiboml
-- Platform: tensorflow
-
-## 🔍 正确性验证深度分析
-
-### qibotn后端警告分析
-在测试过程中，qibotn后端产生了以下警告：
-```
-E:\qiboenv\qibovenv\Lib\site-packages\quimb\tensor\circuit.py:215: SyntaxWarning: Unsupported operation ignored: creg
-  warnings.warn(
-E:\qiboenv\qibovenv\Lib\site-packages\quimb\tensor\circuit.py:215: SyntaxWarning: Unsupported operation ignored: measure
-  warnings.warn(
-```
-
-**警告说明**：
-- **creg (经典寄存器)**：qibotn后端不支持经典寄存器操作
-- **measure (测量操作)**：qibotn后端不支持测量操作
-- **影响评估**：这些警告**不影响状态向量计算**，只影响量子电路中的经典操作部分
-
-### 严格正确性验证结果
-通过状态向量对比验证（与numpy基准对比）：
-
-| 后端 | 状态向量差异 | 概率分布差异 | 验证结果 |
-|------|-------------|-------------|----------|
-| numpy | 0.00e+00 | 0.00e+00 | ✅ 基准完美 |
-| qibojit (numba) | 0.00e+00 | 0.00e+00 | ✅ 高精度 |
-| qibotn (qutensornet) | 1.28e-13 | 4.99e-16 | ✅ 高精度 |
-| qiboml (jax) | 0.00e+00 | 0.00e+00 | ✅ 高精度 |
-| qiboml (pytorch) | N/A | N/A | ❌ 验证失败 |
-| qiboml (tensorflow) | 0.00e+00 | 0.00e+00 | ✅ 高精度 |
-
-**验证标准**：差异 < 1e-10 为高精度，< 1e-6 为可接受精度
-
-### 性能分析
+## 性能分析
 
 ### 执行时间分析
 - **最佳性能**: qibojit (numba) 后端，相比numpy基准有显著加速

@@ -1,0 +1,7 @@
+后端名称,执行时间均值(秒),执行时间标准差(秒),峰值内存占用(MB),加速比,正确性验证,量子比特数,电路深度,门数量,吞吐率(门/秒),JIT编译时间(秒),电路构建时间(秒),平台,测试状态
+numpy,8.103996,0.102448,N/A,N/A,Passed,18,138,820,101.18,N/A,0.4727,,Completed
+qibojit (numba),0.383089,0.066594,0.00,21.15x,Passed,18,138,820,2140.50,0.3603,0.4539,numba,Completed
+qibotn (qutensornet),1.048086,0.025366,0.55,7.73x,Passed,18,138,820,782.38,N/A,0.4484,qutensornet,Completed
+qiboml (jax),3.413138,0.036608,7.61,2.37x,Passed,18,138,820,240.25,7.9249,0.4296,jax,Completed
+qiboml (pytorch),2.812460,0.276214,1734.65,2.88x,Passed,18,138,820,291.56,N/A,0.3817,pytorch,Completed
+qiboml (tensorflow),21.698357,1.631918,8.05,0.37x,Passed,18,138,820,37.79,N/A,0.8390,tensorflow,Completed
