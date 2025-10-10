@@ -1,6 +1,7 @@
 
 qibo_profiler.py是一个用于量子电路性能分析的工具，主要功能是测量和评估量子电路的执行效率、资源使用情况以及计算保真度。该工具采用模块化设计，包含多个功能类，可以全面分析量子电路的性能特征。
 qprofun.py是qibo_profiler.py的简化版本，用于演示如何使用该工具进行量子电路性能分析。
+主要使用示例在test_qibo_profiler.ipynb中，使用时看一下即可。
 
 qibo_profiler.py的主要组件包括：
 主要组件：
@@ -27,6 +28,28 @@ report = profile_circuit(
     calculate_fidelity=True # 是否计算保真度
 )
 ```
+生成markdown报告
+```python
+from qibo_profiler import generate_markdown_report
+
+# 生成Markdown格式的报告
+generate_markdown_report(report, output_path='report.md')
+```
+
+2. 高级使用：
+```python
+from qibo_profiler import profile_circuit
+
+# 创建或获取量子电路
+circuit = Circuit(nqubits=10)
+
+# 分析电路性能
+report = profile_circuit(
+    circuit,
+    n_runs=3,              # 运行次数
+    mode='advanced',       # 分析模式 (这是一个可扩展的方向)
+    calculate_fidelity=True # 是否计算保真度
+)
 
 2. 配置选项：
 - n_runs：指定电路运行的次数，用于计算平均性能
