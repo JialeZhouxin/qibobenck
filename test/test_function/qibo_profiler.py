@@ -31,7 +31,7 @@ import torch  # 导入PyTorch库，用于深度学习计算
 import jax  # 导入JAX库，用于高性能数值计算
 import tensorflow as tf  # 导入TensorFlow库，用于深度学习计算
 import cpuinfo  # 导入 py-cpuinfo 库
-
+from typing import Optional
 """
 # --- Target Data Structure Blueprint ---
 {
@@ -582,21 +582,102 @@ def profile_circuit(circuit: Circuit, n_runs=1, mode='basic', calculate_fidelity
 
     return report
 
-# ... rest of code ...
-# ... existing code ...
-#if __name__ == "__main__":
-    # 创建一个简单的 qibo 电路
-    from qibo import gates, models
-    from qibo.models import QFT
-    from qibo import set_backend
-    set_backend("numpy")
-    # 定义一个简单的量子电路
-    circuit = QFT(16)
-    # 调用 profile_circuit 函数
-    report = profile_circuit(
-        circuit,
-        n_runs=3,
-        mode='basic',
-        calculate_fidelity=True,
-    )
+
+def generate_markdown_report(report: dict, output_path: Optional[str] = None):
+    """
+    将性能分析报告转换为 Markdown 格式文档。
+
+    参数:
+        report (dict): profile_circuit 函数生成的性能分析报告
+        output_path (str, optional): 输出文件路径。如果为 None，则在同一文件夹下生成带时间戳的文件
+
+    返回:
+        str: 如果 output_path 为 None，返回 Markdown 格式的字符串
+    """
+    # 如果未提供输出路径，则生成默认文件名
+    if output_path is None:
+        # 从时间戳创建文件名，格式为：qibo_report_YYYYMMDD_HHMMSS.md
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = os.path.join(os.path.dirname(__file__), f"qibo_report_{report['inputs']['environment']['qibo_backend']}_{timestamp}.md")
+    
+    markdown_lines = [
+        "# 量子电路性能分析报告",
+        "",
+        "## 元数据",
+        f"- 分析器版本: {report['metadata']['profiler_version']}",
+        f"- 生成时间: {report['metadata']['timestamp_utc']}",
+        "",
+        "## 输入参数",
+        "### 分析器设置",
+        f"- 运行次数: {report['inputs']['profiler_settings']['n_runs']}",
+        f"- 分析模式: {report['inputs']['profiler_settings']['mode']}",
+        f"- 保真度计算: {'是' if report['inputs']['profiler_settings']['fidelity_calculated'] else '否'}",
+        "",
+        "### 电路属性",
+        f"- 量子比特数: {report['inputs']['circuit_properties']['n_qubits']}",
+        f"- 电路深度: {report['inputs']['circuit_properties']['depth']}",
+        f"- 总门数: {report['inputs']['circuit_properties']['total_gates']}",
+        "",
+        "#### 门统计",
+        "| 门类型 | 数量 |",
+        "|--------|------|"
+    ]
+    
+    # 添加门统计表格
+    for gate, count in report['inputs']['circuit_properties']['gate_counts'].items():
+        markdown_lines.append(f"| {gate} | {count} |")
+    
+    # 添加环境信息
+    markdown_lines.extend([
+        "",
+        "### 运行环境",
+        f"- Qibo 后端: {report['inputs']['environment']['qibo_backend']}",
+        f"- Qibo 版本: {report['inputs']['environment']['qibo_version']}",
+        f"- Python 版本: {report['inputs']['environment']['python_version']}",
+        f"- CPU 型号: {report['inputs']['environment']['cpu_model_friendly']}",
+        f"- 物理核心数: {report['inputs']['environment']['cpu_cores_physical']}",
+        f"- 总内存: {report['inputs']['environment']['total_memory']['value']} GiB",
+        "",
+        "## 性能结果",
+        "### 摘要统计",
+        f"- 平均运行时间: {report['results']['summary']['runtime_avg']['value']:.2f} 秒",
+        f"- 运行时间标准差: {report['results']['summary']['runtime_std_dev']['value']:.2f} 秒",
+        f"- 平均 CPU 利用率: {report['results']['summary']['cpu_utilization_avg']['value']:.2f}%",
+        f"- 平均每核CPU利用率: {report['results']['summary']['cpu_utilization_normalized']['value']:.2f}%",
+        f"- 平均内存使用: {report['results']['summary']['memory_usage_avg']['value']:.2f} MiB",
+        f"- 峰值内存使用: {report['results']['summary']['memory_usage_peak']['value']:.2f} MiB"
+    ])
+    
+    # 如果有保真度信息，添加保真度数据
+    if 'fidelity' in report['results']['summary']:
+        markdown_lines.append(f"- 保真度: {report['results']['summary']['fidelity']['value']:.6f}")
+    
+    # 添加每次运行的详细数据
+    markdown_lines.extend([
+        "",
+        "### 详细运行数据",
+        "#### 每次运行时间",
+        "| 运行次数 | 时间 (秒) |",
+        "|----------|-----------|"
+    ])
+    
+    for i, runtime in enumerate(report['results']['raw_metrics']['runtime_per_run']['values'], 1):
+        markdown_lines.append(f"| 第 {i} 次 | {runtime:.2f} |")
+    
+    # 如果有错误信息，添加错误部分
+    if report['error']:
+        markdown_lines.extend([
+            "",
+            "## 错误信息",
+            f"```\n{report['error']}\n```"
+        ])
+    
+    markdown_content = '\n'.join(markdown_lines)
+    
+    # 写入文件
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(markdown_content)
+    
+    return output_path  # 返回实际使用的文件路径
+
 #print(json.dumps(report, indent=4))
