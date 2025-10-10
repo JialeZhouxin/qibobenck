@@ -27,7 +27,6 @@ import os
 from qibo.models import Circuit
 # 导入qibo模块，用于量子计算
 import qibo
-import numpy as np  # 再次导入NumPy库（重复导入，可能是冗余的）
 import torch  # 导入PyTorch库，用于深度学习计算
 import jax  # 导入JAX库，用于高性能数值计算
 import tensorflow as tf  # 导入TensorFlow库，用于深度学习计算
@@ -38,40 +37,88 @@ import cpuinfo  # 导入 py-cpuinfo 库
 {
     "metadata": {
         "profiler_version": "1.0",
-        "timestamp_utc": "2025-10-26T11:30:00Z"
+        "timestamp_utc": "2025-10-10T09:54:11.247172Z"
     },
     "inputs": {
         "profiler_settings": {
             "n_runs": 3,
             "mode": "basic",
-            "fidelity_calculated": True
+            "fidelity_calculated": true
         },
         "circuit_properties": {
-            "n_qubits": 10,
-            "depth": 25,
-            "total_gates": 150,
-            "gate_counts": {"h": 10, "cnot": 40},
-            "qasm_hash_sha256": "a3b...e9f"
+            "n_qubits": 18,
+            "depth": 138,
+            "total_gates": 820,
+            "gate_counts": {
+                "rz": 495,
+                "sx": 18,
+                "cx": 306,
+                "measure": 1
+            },
+            "qasm_hash_sha256": "0717ab030b23ba740b6163b072283083de0dbd64dadfd65f48972295fcbab918"
         },
         "environment": {
-            "qibo_backend": "qibojit",
-            "qibo_version": "0.1.10",
-            "python_version": "3.9.7",
-            "cpu_model": "Intel Core i9-12900K",
-            "cpu_cores_physical": 8,
-            "total_memory": {"value": 64.0, "unit": "GiB"}
+            "qibo_backend": "qiboml (pytorch)",
+            "qibo_version": "0.2.21",
+            "python_version": "3.12.0",
+            "cpu_model": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+            "cpu_model_friendly": "Intel(R) Core(TM) i5-7400 CPU @ 3.00GHz",
+            "cpu_cores_physical": 4,
+            "total_memory": {
+                "value": 15.91,
+                "unit": "GiB"
+            }
         }
     },
     "results": {
         "summary": {
-            "runtime_avg": {"value": 15.23, "unit": "seconds"},
-            "runtime_std_dev": {"value": 0.12, "unit": "seconds"},
-            "peak_memory": {"value": 2048.5, "unit": "MiB"},
-            "cpu_utilization_avg": {"value": 95.8, "unit": "percent"},
-            "fidelity": {"value": 0.9999, "unit": None}
+            "runtime_avg": {
+                "value": 8.466669666673019,
+                "unit": "seconds"
+            },
+            "runtime_std_dev": {
+                "value": 4.993247684234495,
+                "unit": "seconds"
+            },
+            "cpu_utilization_avg": {
+                "value": 57.70175120799762,
+                "unit": "percent"
+            },
+            "cpu_utilization_psutil_avg": {
+                "value": 90.43333333333334,
+                "unit": "percent"
+            },
+            "cpu_utilization_psutil_std_dev": {
+                "value": 60.00096295523561,
+                "unit": "percent"
+            },
+            "cpu_cores_logical": 4,
+            "cpu_utilization_normalized": {
+                "value": 22.608333333333334,
+                "unit": "percent"
+            },
+            "memory_usage_avg": {
+                "value": 1266.8515625,
+                "unit": "MiB"
+            },
+            "memory_usage_peak": {
+                "value": 4450.80078125,
+                "unit": "MiB"
+            },
+            "fidelity": {
+                "value": 1.0000000000004174,
+                "unit": null
+            }
         },
         "raw_metrics": {
-            "runtime_per_run": {"values": [15.11, 15.35, 15.23], "unit": "seconds"}
+            "runtime_per_run": {
+                "values": [
+                    15.111781800005701,
+                    7.213086100004148,
+                    3.075141100009205
+                ],
+                "unit": "seconds"
+            }
         }
     },
     "error": null
@@ -302,7 +349,7 @@ class ExecutionEngine:
         # 记录开始的CPU时间和内存使用情况
         process = psutil.Process()
         start_cpu_times = process.cpu_times()
-        initial_memory_usage = process.memory_info().rss / (1024 ** 2)  # 初始内存使用量（MiB）
+        #initial_memory_usage = process.memory_info().rss / (1024 ** 2)  # 初始内存使用量（MiB）
 
         # 循环执行量子电路n_runs次
         for _ in range(n_runs):
