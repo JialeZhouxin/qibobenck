@@ -497,28 +497,6 @@ def _flatten_dict(d, parent_key='', sep='_'):
         else:
             items.append((new_key, v))
     return dict(items)
-
-# 辅助函数: 导出报告为CSV
-def _export_to_csv(flat_report, filepath):
-    """
-    将扁平化的报告导出到CSV文件中。
-
-    参数:
-    flat_report (dict): 扁平化的报告数据，键为列名，值为对应的数据。
-    filepath (str): CSV文件的路径。
-
-    功能:
-    - 如果文件不存在，则创建文件并写入表头。
-    - 如果文件已存在，则直接追加数据行。
-    """
-    file_exists = os.path.isfile(filepath)
-    with open(filepath, 'a', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=flat_report.keys())
-        if not file_exists:
-            writer.writeheader()  # 写入表头
-        writer.writerow(flat_report)
-
-# 更新 profile_circuit 函数以支持CSV导出
 def profile_circuit(circuit: Circuit, n_runs=1, mode='basic', calculate_fidelity=True):
     """分析量子电路的性能和保真度。
 

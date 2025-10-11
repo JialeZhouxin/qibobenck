@@ -15,7 +15,12 @@ qibo_profiler.py的主要组件包括：
 1. 基本使用：
 ```python
 from qibo.models import Circuit
-from qibo_profiler import profile_circuit
+import sys
+import os
+# 直接使用绝对路径
+sys.path.append('E:/qiboenv/test/test_function')
+from qibo_profiler import profile_circuit  # 导入用于分析电路性能的函数
+from qibo_profiler import generate_markdown_report  # 导入用于生成Markdown格式报告的函数
 
 # 创建或获取量子电路
 circuit = Circuit(nqubits=10)
