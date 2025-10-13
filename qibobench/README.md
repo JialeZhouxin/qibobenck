@@ -23,7 +23,7 @@ python qasmbench_runner.py --list
 
 ```bash
 # 通过文件路径测试
-python qasmbench_runner.py --circuit QASMBench/medium/qft_n18/qft_n18.qasm
+python qasmbench_runner.py --circuit QASMBench/medium/qft_n18/qft_n18_transpiled.qasm
 ```
 
 ### 3. 使用示例代码

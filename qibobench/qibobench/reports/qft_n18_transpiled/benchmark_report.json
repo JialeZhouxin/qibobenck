@@ -1,0 +1,9 @@
+{
+  "metadata": {
+    "generation_time": "2025-10-13T16:56:09.841226",
+    "circuit_name": "qft_n18_transpiled",
+    "qibo_version": "0.2.21",
+    "python_version": "3.12.0"
+  },
+  "results": {}
+}

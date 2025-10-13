@@ -1,0 +1,192 @@
+{
+  "metadata": {
+    "generation_time": "2025-10-13T15:50:14.233733",
+    "circuit_name": "qft_n18_transpiled",
+    "qibo_version": "0.2.21",
+    "python_version": "3.12.0"
+  },
+  "results": {
+    "numpy": {
+      "execution_time": {
+        "mean": 7.775082540512085,
+        "std": 0.04815649176399538
+      },
+      "memory_usage_mb": 6.0078125,
+      "speedup": null,
+      "correctness": "Passed (no baseline)",
+      "throughput_gates_per_sec": 105.46511830934118,
+      "jit_compilation_time": null,
+      "circuit_build_time": 1.516890048980713,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 138,
+        "ngates": 820,
+        "source": ".\\QASMBench\\medium\\qft_n18\\qft_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "numpy",
+        "Platform": "default"
+      }
+    },
+    "qibojit (numba)": {
+      "execution_time": {
+        "mean": 0.562625789642334,
+        "std": 0.19621596454820617
+      },
+      "memory_usage_mb": 6.0078125,
+      "speedup": 13.81927861048597,
+      "correctness": "Passed (fidelity: 1.000000)",
+      "throughput_gates_per_sec": 1457.4518536046508,
+      "jit_compilation_time": null,
+      "circuit_build_time": 1.60892653465271,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 138,
+        "ngates": 820,
+        "source": ".\\QASMBench\\medium\\qft_n18\\qft_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "qibojit",
+        "Platform": "numba"
+      }
+    },
+    "qibotn (qutensornet)": {
+      "execution_time": {
+        "mean": 3.000575637817383,
+        "std": 0.11366951592985848
+      },
+      "memory_usage_mb": 4.05859375,
+      "speedup": 2.59119698317876,
+      "correctness": "Passed (fidelity: 1.000000)",
+      "throughput_gates_per_sec": 273.2808963937558,
+      "jit_compilation_time": null,
+      "circuit_build_time": 1.7490336894989014,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 138,
+        "ngates": 820,
+        "source": ".\\QASMBench\\medium\\qft_n18\\qft_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "qibotn",
+        "Platform": "qutensornet"
+      }
+    },
+    "qiboml (jax)": {
+      "execution_time": {
+        "mean": 3.430749464035034,
+        "std": 0.18281886357670832
+      },
+      "memory_usage_mb": 10.96875,
+      "speedup": 2.2662927217563467,
+      "correctness": "Passed (fidelity: 1.000000)",
+      "throughput_gates_per_sec": 239.01483002363193,
+      "jit_compilation_time": null,
+      "circuit_build_time": 1.199470043182373,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 138,
+        "ngates": 820,
+        "source": ".\\QASMBench\\medium\\qft_n18\\qft_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "qiboml",
+        "Platform": "jax"
+      }
+    },
+    "qiboml (pytorch)": {
+      "execution_time": {
+        "mean": 3.8888733863830565,
+        "std": 1.3424433575495802
+      },
+      "memory_usage_mb": 550.265625,
+      "speedup": 1.9993149089750886,
+      "correctness": "Passed (fidelity: 1.000000)",
+      "throughput_gates_per_sec": 210.8579834126874,
+      "jit_compilation_time": null,
+      "circuit_build_time": 1.3463661670684814,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 138,
+        "ngates": 820,
+        "source": ".\\QASMBench\\medium\\qft_n18\\qft_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "qiboml",
+        "Platform": "pytorch"
+      }
+    },
+    "qiboml (tensorflow)": {
+      "execution_time": {
+        "mean": 17.428989458084107,
+        "std": 0.9901725479643945
+      },
+      "memory_usage_mb": 8.88671875,
+      "speedup": 0.44610059345154746,
+      "correctness": "Passed (fidelity: 1.000000)",
+      "throughput_gates_per_sec": 47.048051866234765,
+      "jit_compilation_time": null,
+      "circuit_build_time": 2.9400434494018555,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 138,
+        "ngates": 820,
+        "source": ".\\QASMBench\\medium\\qft_n18\\qft_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "qiboml",
+        "Platform": "tensorflow"
+      }
+    },
+    "qulacs": {
+      "execution_time": {
+        "mean": 0.10061936378479004,
+        "std": 0.005178274735177645
+      },
+      "memory_usage_mb": 6.0234375,
+      "speedup": 77.27222920174529,
+      "correctness": "Passed (fidelity: 1.000000)",
+      "throughput_gates_per_sec": 8149.524794788595,
+      "jit_compilation_time": null,
+      "circuit_build_time": 1.1525487899780273,
+      "circuit_parameters": {
+        "nqubits": 18,
+        "depth": 138,
+        "ngates": 820,
+        "source": ".\\QASMBench\\medium\\qft_n18\\qft_n18_transpiled.qasm"
+      },
+      "environment_info": {
+        "CPU": "Intel64 Family 6 Model 158 Stepping 9, GenuineIntel",
+        "RAM_GB": 15.909721374511719,
+        "Python": "3.12.0",
+        "Qibo": "0.2.21",
+        "Backend": "qulacs",
+        "Platform": "default"
+      }
+    }
+  }
+}
