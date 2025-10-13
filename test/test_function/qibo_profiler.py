@@ -261,7 +261,7 @@ class InputAnalyzer:
 class BenchmarkManager:
     _GLOBAL_CACHE = {}
 
-    def get_benchmark_state(self, circuit: Circuit, circuit_hash: str):
+    def get_benchmark_state(self, circuit: Circuit, circuit_hash: str, initial_state=None):
         """
         获取电路的基准状态，如果缓存中已有该电路的基准状态，则直接返回缓存结果。
         否则，根据当前后端配置计算基准状态，并将其缓存。
@@ -296,16 +296,18 @@ class BenchmarkManager:
         
         if current_backend_name == "qibojit":
             # 如果当前就是基准后端，直接计算即可
-            state = circuit(nshots=1).state()
+            state = circuit(nshots=1 , initial_state=initial_state).state()
+            norm_state = state / np.linalg.norm(state)
             self._GLOBAL_CACHE[circuit_hash] = state
-            return state
+            return norm_state
             
         try:
             # 安全地切换到基准后端
             qibo.set_backend("qibojit")
-            state = circuit(nshots=1).state()
+            state = circuit(nshots=1, initial_state=initial_state).state()
+            norm_state = state / np.linalg.norm(state)
             self._GLOBAL_CACHE[circuit_hash] = state
-            return state
+            return norm_state
         finally:
             # 无论成功或失败，都确保切换回原始后端
             qibo.set_backend(original_backend_config['backend_name'], platform=original_backend_config.get('platform_name'))
@@ -317,7 +319,7 @@ class BenchmarkManager:
 
 # 模块 4: ExecutionEngine 类
 class ExecutionEngine:
-    def run_and_measure(self, circuit: Circuit, config: dict):
+    def run_and_measure(self, circuit: Circuit, config: dict, initial_state=None):
         """运行量子电路并测量其性能指标，包括内存使用情况。
 
         该方法执行给定的量子电路多次，并收集每次运行的挂钟时间（wall time），
@@ -359,7 +361,7 @@ class ExecutionEngine:
             
             # 记录每次运行的挂钟时间
             start_time = time.perf_counter()
-            state_vector = convert_to_numpy(circuit(nshots=1).state())
+            state_vector = convert_to_numpy(circuit(nshots=1,initial_state=initial_state).state())
             end_time = time.perf_counter()
             cpu_util = process.cpu_percent()  # 获取CPU利用率
             end_memory_usage = process.memory_info().rss / (1024 ** 2)  # 运行后的内存使用量（MiB）
@@ -371,7 +373,7 @@ class ExecutionEngine:
             
             wall_runtimes.append(end_time - start_time)
             cpu_utils.append(cpu_util)
-            final_state_vector = state_vector
+            final_state_vector = state_vector/ np.linalg.norm(state_vector)
 
         # 记录结束的CPU时间
         end_cpu_times = process.cpu_times()
@@ -497,7 +499,7 @@ def _flatten_dict(d, parent_key='', sep='_'):
         else:
             items.append((new_key, v))
     return dict(items)
-def profile_circuit(circuit: Circuit, n_runs=1, mode='basic', calculate_fidelity=True):
+def profile_circuit(circuit: Circuit, n_runs=1, mode='basic', calculate_fidelity=True, initial_state=None):
     """分析量子电路的性能和保真度。
 
     该函数对输入的量子电路进行性能分析，包括运行时间、资源使用情况等指标的测量。
@@ -543,11 +545,11 @@ def profile_circuit(circuit: Circuit, n_runs=1, mode='basic', calculate_fidelity
         if calculate_fidelity:
             benchmark_manager = BenchmarkManager()
             circuit_hash = report["inputs"]["circuit_properties"]["qasm_hash_sha256"]
-            benchmark_state = benchmark_manager.get_benchmark_state(circuit, circuit_hash)
+            benchmark_state = benchmark_manager.get_benchmark_state(circuit, circuit_hash , initial_state)
 
         # 执行电路并测量性能
         execution_engine = ExecutionEngine()
-        raw_data = execution_engine.run_and_measure(circuit, config)
+        raw_data = execution_engine.run_and_measure(circuit, config , initial_state)
 
         # 处理结果
         result_processor = ResultProcessor()
@@ -561,7 +563,7 @@ def profile_circuit(circuit: Circuit, n_runs=1, mode='basic', calculate_fidelity
     return report
 
 
-def generate_markdown_report(report: dict, output_path: Optional[str] = None):
+def generate_markdown_report(report: dict, output_path: Optional[str] = None, default_dir: Optional[str] = None):
     """
     将性能分析报告转换为 Markdown 格式文档。
 
@@ -574,9 +576,10 @@ def generate_markdown_report(report: dict, output_path: Optional[str] = None):
     """
     # 如果未提供输出路径，则生成默认文件名
     if output_path is None:
-        # 从时间戳创建文件名，格式为：qibo_report_YYYYMMDD_HHMMSS.md
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = os.path.join(os.path.dirname(__file__), f"qibo_report_{report['inputs']['environment']['qibo_backend']}_{timestamp}.md")
+        # 使用 default_dir 或当前工作目录
+        base_dir = default_dir if default_dir else os.getcwd()
+        output_path = os.path.join(base_dir, f"qibo_report_{report['inputs']['environment']['qibo_backend']}_{timestamp}.md")
     
     markdown_lines = [
         "# 量子电路性能分析报告",

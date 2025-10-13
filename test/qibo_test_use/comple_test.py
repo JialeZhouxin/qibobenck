@@ -19,6 +19,5 @@ circuit.compile()
 for i in range(3):
     init_state = np.ones(4) / 2.0 + i
     circuit(init_state)
-    report = profile_circuit(circuit, init_state)
-    print(report)
-    generate_markdown_report(report, f"report_{i}.md")
+    report = profile_circuit(circuit, initial_state = init_state)
+    generate_markdown_report(report)

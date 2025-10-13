@@ -104,8 +104,8 @@ class QASMBenchReporter:
                     row = [
                         backend_name,
                         f"{metrics.execution_time_mean:.6f}",
-                        f"{metrics.execution_time_std:.6f}",
-                        f"{metrics.peak_memory_mb:.2f}",
+                        f"{metrics.execution_time_std:.6f}" if metrics.execution_time_std is not None else "N/A",
+                        f"{metrics.peak_memory_mb:.2f}" if metrics.peak_memory_mb is not None else "N/A",
                         f"{metrics.speedup:.2f}x" if metrics.speedup else "N/A",
                         metrics.correctness,
                         metrics.circuit_parameters.get('nqubits', 'N/A'),
@@ -323,7 +323,7 @@ class QASMBenchRunner:
             return None
         
         try:
-            with open(qasm_file_path, "r") as file:
+            with open(qasm_file_path, "r", encoding='utf-8') as file:
                 qasm_code = file.read()
             
             # 移除barrier语句（Qibo不支持）
@@ -414,7 +414,7 @@ class QASMBenchRunner:
         # 处理其他情况，尝试直接转换
         else:
             try:
-                return np.array(array)
+                return np.array(array,copy=False)
             except Exception as e:
                 raise ValueError(f"无法将类型 {type(array)} 转换为NumPy数组: {str(e)}")
 
@@ -494,7 +494,8 @@ class QASMBenchRunner:
             metrics.circuit_build_time = build_end - build_start
             
             if circuit is None:
-                return metrics
+                metrics.correctness = "Failed"
+                return None, metrics
             
             # 记录电路参数
             metrics.circuit_parameters = {
