@@ -2,6 +2,7 @@
 qibo>=0.2.21
 qiskit>=1.4.4
 pennylane>=0.33.0
+qulacs>=0.5.0
 
 # Data processing and visualization
 numpy>=1.24.0

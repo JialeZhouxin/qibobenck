@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 import qibo
-from qiskit import QuantumCircuit
+
 
 from benchmark_harness.abstractions import BenchmarkCircuit
 
@@ -47,8 +47,9 @@ class QFTCircuit(BenchmarkCircuit):
         c.name = f"qft_{n_qubits}_qubits"
         return c
 
-    def _build_qiskit_qft(self, n_qubits: int) -> QuantumCircuit:
+    def _build_qiskit_qft(self, n_qubits: int):
         """构建Qiskit平台的QFT电路"""
+        from qiskit import QuantumCircuit
         qc = QuantumCircuit(n_qubits)
 
         # 应用Hadamard门和受控相位门

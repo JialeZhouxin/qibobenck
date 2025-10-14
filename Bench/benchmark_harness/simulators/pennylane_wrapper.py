@@ -21,8 +21,8 @@ except ImportError:
     PENNYLANE_AVAILABLE = False
 
 
-class PennyLaneWrapper(SimulatorInterface):
-    """PennyLane模拟器的封装器实现"""
+class PennylaneWrapper(SimulatorInterface):
+    """Pennylane模拟器的封装器实现"""
 
     platform_name = "pennylane"
 
