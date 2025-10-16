@@ -140,7 +140,105 @@ python run_benchmarks.py --output-dir results
 python run_benchmarks.py --output-dir my_benchmark_results
 ```
 
-### 6. `--verbose` 参数
+### 6. `--repeat` 参数
+
+**语法**: `--repeat <重复次数>`
+
+**说明**: 指定每个电路重复运行的次数，用于减少单次运行的偶然性并提高测量可靠性
+
+**类型**: 整数
+
+**默认值**: `1`
+
+**取值范围**: 1-100（建议值：3-10用于常规测试，10-30用于精确测量）
+
+**使用场景**:
+- **性能稳定性测试**: 识别性能波动和异常值
+- **统计分析**: 计算均值、标准差和置信区间
+- **缓存优化**: 提高参考态缓存的使用效率
+- **精确基准测试**: 获得更可靠的性能指标
+
+**示例**:
+```bash
+# 基本重复运行（5次）
+python run_benchmarks.py --repeat 5
+
+# 高精度测试（20次）
+python run_benchmarks.py --repeat 20 --simulators qibo-qibojit
+
+# 结合预热运行
+python run_benchmarks.py --repeat 10 --warmup-runs 2
+```
+
+**输出影响**:
+- 生成包含统计信息的CSV文件（均值、标准差等）
+- 创建详细的运行稳定性图表
+- 在报告中显示变异系数和置信区间
+
+### 7. `--warmup-runs` 参数
+
+**语法**: `--warmup-runs <预热次数>`
+
+**说明**: 指定正式测量前的预热运行次数，用于消除JIT编译和缓存初始化的影响
+
+**类型**: 整数
+
+**默认值**: `0`
+
+**取值范围**: 0-10（建议值：1-3用于JIT后端）
+
+**使用场景**:
+- **JIT编译后端**: 消除首次编译开销（如qibo-qibojit）
+- **缓存初始化**: 预热内存缓存和磁盘缓存
+- **GPU加速**: 预热GPU内存和计算单元
+- **精确测量**: 确保测量的是稳定状态性能
+
+**示例**:
+```bash
+# JIT后端预热
+python run_benchmarks.py --warmup-runs 3 --simulators qibo-qibojit
+
+# GPU后端预热
+python run_benchmarks.py --warmup-runs 2 --simulators pennylane-lightning.gpu
+
+# 结合重复运行
+python run_benchmarks.py --warmup-runs 2 --repeat 10
+```
+
+**注意事项**:
+- 预热运行的结果不会被记录或分析
+- 预热运行仅影响性能测量，不影响参考态计算
+- 对于非JIT后端，预热运行可能不会带来显著改善
+
+### 8. `--statistical-analysis` 参数
+
+**语法**: `--statistical-analysis` (无参数)
+
+**说明**: 启用高级统计分析，包括置信区间、变异系数和显著性检验
+
+**默认值**: 未启用
+
+**分析内容**:
+- **置信区间**: 95%置信区间的性能指标范围
+- **变异系数**: 相对标准差，衡量性能稳定性
+- **异常值检测**: 识别和标记异常运行结果
+- **显著性检验**: 比较不同模拟器性能差异的统计显著性
+
+**示例**:
+```bash
+# 启用统计分析
+python run_benchmarks.py --repeat 10 --statistical-analysis
+
+# 完整统计分析
+python run_benchmarks.py --repeat 20 --warmup-runs 3 --statistical-analysis --verbose
+```
+
+**输出增强**:
+- 在报告中添加统计分析章节
+- 生成置信区间可视化图表
+- 标记统计显著的性能差异
+
+### 9. `--verbose` 参数
 
 **语法**: `--verbose` (无参数)
 
@@ -152,6 +250,9 @@ python run_benchmarks.py --output-dir my_benchmark_results
 ```bash
 # 启用详细输出
 python run_benchmarks.py --verbose
+
+# 重复运行的详细输出
+python run_benchmarks.py --repeat 5 --verbose
 ```
 
 ## 完整命令示例

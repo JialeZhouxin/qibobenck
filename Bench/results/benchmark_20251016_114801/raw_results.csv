@@ -1,0 +1,3 @@
+simulator,backend,circuit_name,n_qubits,wall_time_sec,wall_time_std,cpu_time_sec,cpu_time_std,peak_memory_mb,memory_std,cpu_utilization_percent,state_fidelity,fidelity_std,repeat,runner_id
+qibo,qibojit,qft_4_qubits,4,0.0007111999999324326,0.00011968674007299826,0.0,0.0,0.001953315734863281,0.0001965678826465156,0.0,0.9999999999999986,1.1702778228589004e-16,10,qibo-qibojit
+qibo,qibojit,qft_8_qubits,8,0.0025362500004121103,0.000528112566384334,0.009375,0.01976423537605237,0.005602073669433594,0.0004975580500612334,0.0,0.9999999999999984,0.0,10,qibo-qibojit

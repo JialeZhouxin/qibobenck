@@ -181,6 +181,27 @@ def parse_arguments() -> argparse.Namespace:
         help="显示缓存统计信息"
     )
 
+    # 重复运行参数
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        default=1,
+        help="每个电路重复运行的次数（默认：1）"
+    )
+
+    parser.add_argument(
+        "--warmup-runs",
+        type=int,
+        default=0,
+        help="正式测量前的预热运行次数（默认：0）"
+    )
+
+    parser.add_argument(
+        "--statistical-analysis",
+        action="store_true",
+        help="启用统计分析，计算标准差、置信区间等"
+    )
+
     return parser.parse_args()
 
 
@@ -437,8 +458,14 @@ def run_benchmarks(
 
                 try:
                     # 执行黄金标准模拟器获得参考态
-                    golden_result = golden_wrapper.execute(circuit_for_golden, n_qubits)
-                    reference_state = golden_result.final_state
+                    golden_results = golden_wrapper.execute(
+                        circuit_for_golden,
+                        n_qubits,
+                        repeat=1,
+                        warmup_runs=0
+                    )
+                    # 使用第一次运行的结果作为参考态
+                    reference_state = golden_results[0].final_state
                     
                     # 如果有缓存，保存计算结果
                     if cache:
@@ -468,33 +495,35 @@ def run_benchmarks(
                         platform=wrapper_instance.platform_name, n_qubits=n_qubits
                     )
 
-                    # 优化：如果是黄金标准模拟器，重用已计算的结果
-                    if runner_id == golden_standard_key:
-                        if golden_result is not None:
-                            # 如果有之前计算的golden_result，重用它
-                            golden_result.state_fidelity = 1.0  # 自身保真度为1.0
-                            result = golden_result
-                        else:
-                            # 如果没有golden_result（从缓存获取的情况），需要重新执行
-                            result = wrapper_instance.execute(
-                                circuit=circuit_for_current,
-                                n_qubits=n_qubits,
-                                reference_state=reference_state,
-                            )
-                            result.state_fidelity = 1.0  # 自身保真度为1.0
-                    else:
-                        # 在其他模拟器上执行并计算保真度
-                        result = wrapper_instance.execute(
-                            circuit=circuit_for_current,
-                            n_qubits=n_qubits,
-                            reference_state=reference_state,
-                        )
-
-                    # 收集测试结果
-                    all_results.append(result)
-                    print(
-                        f"    Completed in {result.wall_time_sec:.4f}s, fidelity: {result.state_fidelity:.4f}"
+                    # 执行基准测试
+                    results = wrapper_instance.execute(
+                        circuit=circuit_for_current,
+                        n_qubits=n_qubits,
+                        reference_state=reference_state,
+                        repeat=args.repeat,
+                        warmup_runs=args.warmup_runs
                     )
+
+                    # 如果是黄金标准模拟器，设置保真度为1.0
+                    if runner_id == golden_standard_key:
+                        for result in results:
+                            result.state_fidelity = 1.0
+
+                    # 收集所有测试结果
+                    all_results.extend(results)
+                    
+                    # 显示汇总信息
+                    if len(results) > 1:
+                        avg_time = results[0].wall_time_mean if results[0].wall_time_mean else sum(r.wall_time_sec for r in results) / len(results)
+                        std_time = results[0].wall_time_std if results[0].wall_time_std else 0
+                        avg_fidelity = results[0].fidelity_mean if results[0].fidelity_mean else sum(r.state_fidelity for r in results) / len(results)
+                        print(
+                            f"    Completed {len(results)} runs: avg {avg_time:.4f}s ± {std_time:.4f}s, avg fidelity {avg_fidelity:.4f}"
+                        )
+                    else:
+                        print(
+                            f"    Completed in {results[0].wall_time_sec:.4f}s, fidelity: {results[0].state_fidelity:.4f}"
+                        )
 
                 except Exception as e:
                     print(f"    Error: {e}")
@@ -610,29 +639,37 @@ def main() -> int:
             print(f"\nProcessing results...")
             try:
                 # 分析结果并生成可视化图表
-                analyze_results(results, output_dir)
+                analyze_results(results, output_dir, repeat=args.repeat)
 
                 # 准备数据用于生成摘要报告
                 data = []
                 for result in results:
+                    # 对于多次运行，只使用汇总结果（第一个结果）
+                    if args.repeat > 1 and result.run_id > 1:
+                        continue
+                        
                     data.append(
                         {
                             "simulator": result.simulator,
                             "backend": result.backend,
                             "circuit_name": result.circuit_name,
                             "n_qubits": result.n_qubits,
-                            "wall_time_sec": result.wall_time_sec,
-                            "cpu_time_sec": result.cpu_time_sec,
-                            "peak_memory_mb": result.peak_memory_mb,
+                            "wall_time_sec": result.wall_time_mean if result.wall_time_mean else result.wall_time_sec,
+                            "wall_time_std": result.wall_time_std if result.wall_time_std else 0.0,
+                            "cpu_time_sec": result.cpu_time_mean if result.cpu_time_mean else result.cpu_time_sec,
+                            "cpu_time_std": result.cpu_time_std if result.cpu_time_std else 0.0,
+                            "peak_memory_mb": result.memory_mean if result.memory_mean else result.peak_memory_mb,
+                            "memory_std": result.memory_std if result.memory_std else 0.0,
                             "cpu_utilization_percent": result.cpu_utilization_percent,
-                            "state_fidelity": result.state_fidelity,
+                            "state_fidelity": result.fidelity_mean if result.fidelity_mean else result.state_fidelity,
+                            "fidelity_std": result.fidelity_std if result.fidelity_std else 0.0,
                         }
                     )
                 
                 # 创建DataFrame并生成报告
                 df = pd.DataFrame(data)
                 df["runner_id"] = df["simulator"] + "-" + df["backend"]
-                generate_summary_report(df, output_dir)
+                generate_summary_report(df, output_dir, repeat=args.repeat)
 
                 print(f"All results processed and saved to {output_dir}")
             except Exception as e:

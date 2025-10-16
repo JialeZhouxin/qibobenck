@@ -6,7 +6,7 @@
 
 import dataclasses
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 import numpy as np
 
@@ -35,6 +35,22 @@ class BenchmarkResult:
     # 原始输出供参考
     final_state: np.ndarray
 
+    # 运行ID，用于区分多次运行
+    run_id: int = 1
+
+    # 统计信息（当repeat > 1时使用）
+    wall_time_mean: Optional[float] = None
+    wall_time_std: Optional[float] = None
+    wall_time_min: Optional[float] = None
+    wall_time_max: Optional[float] = None
+    cpu_time_mean: Optional[float] = None
+    cpu_time_std: Optional[float] = None
+    memory_mean: Optional[float] = None
+    memory_std: Optional[float] = None
+    fidelity_mean: Optional[float] = None
+    fidelity_std: Optional[float] = None
+    confidence_interval: Optional[Tuple[float, float]] = None
+
 
 class SimulatorInterface(ABC):
     """模拟器封装器的统一接口"""
@@ -49,9 +65,25 @@ class SimulatorInterface(ABC):
 
     @abstractmethod
     def execute(
-        self, circuit: Any, n_qubits: int, reference_state: Optional[np.ndarray] = None
-    ) -> BenchmarkResult:
-        """执行给定电路并返回综合结果对象"""
+        self,
+        circuit: Any,
+        n_qubits: int,
+        reference_state: Optional[np.ndarray] = None,
+        repeat: int = 1,
+        warmup_runs: int = 0
+    ) -> list[BenchmarkResult]:
+        """执行给定电路并返回结果列表
+        
+        Args:
+            circuit: 要执行的电路
+            n_qubits: 量子比特数
+            reference_state: 参考态（用于保真度计算）
+            repeat: 重复运行次数
+            warmup_runs: 预热运行次数
+            
+        Returns:
+            list[BenchmarkResult]: 包含所有运行结果的列表
+        """
         pass
 
 
