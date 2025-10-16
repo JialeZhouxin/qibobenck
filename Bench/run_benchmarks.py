@@ -44,6 +44,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pandas as pd
 
 from benchmark_harness.abstractions import BenchmarkCircuit, SimulatorInterface
+from benchmark_harness.caching import CacheConfig, create_cache_instance
 from benchmark_harness.post_processing import (analyze_results,
                                                generate_summary_report)
 from benchmark_harness.simulators import QiboWrapper
@@ -129,9 +130,55 @@ def parse_arguments() -> argparse.Namespace:
 
     # 详细输出参数
     parser.add_argument(
-        "--verbose", 
-        action="store_true", 
+        "--verbose",
+        action="store_true",
         help="启用详细输出"
+    )
+
+    # 缓存相关参数
+    parser.add_argument(
+        "--enable-cache",
+        action="store_true",
+        default=True,
+        help="启用参考态缓存"
+    )
+
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="禁用缓存（覆盖--enable-cache）"
+    )
+
+    parser.add_argument(
+        "--cache-type",
+        choices=["memory", "disk", "hybrid"],
+        default="hybrid",
+        help="缓存类型选择"
+    )
+
+    parser.add_argument(
+        "--cache-dir",
+        default=".benchmark_cache",
+        help="磁盘缓存目录"
+    )
+
+    parser.add_argument(
+        "--memory-cache-size",
+        type=int,
+        default=64,
+        help="内存缓存最大条目数"
+    )
+
+    parser.add_argument(
+        "--clear-cache",
+        action="store_true",
+        help="开始前清空缓存"
+    )
+
+    parser.add_argument(
+        "--cache-stats",
+        action="store_true",
+        help="显示缓存统计信息"
     )
 
     return parser.parse_args()
@@ -287,6 +334,7 @@ def run_benchmarks(
     qubit_ranges: List[int],
     simulators: Dict[str, SimulatorInterface],
     golden_standard_key: str,
+    cache_config: Optional[CacheConfig] = None,
 ) -> List[Any]:
     """运行量子模拟器基准测试的核心函数。
 
@@ -341,26 +389,74 @@ def run_benchmarks(
         )
 
     golden_wrapper = simulators[golden_standard_key]
+    
+    # 初始化缓存
+    cache = None
+    if cache_config and cache_config.enable_cache:
+        try:
+            cache = create_cache_instance(cache_config)
+            if args.clear_cache:
+                cache.clear_cache()
+            if args.verbose:
+                print(f"Initialized {cache_config.cache_type} cache")
+        except Exception as e:
+            print(f"Warning: Failed to initialize cache: {e}")
+            cache = None
 
     # 遍历所有电路和量子比特数组合
     for circuit_instance in circuits:
         for n_qubits in qubit_ranges:
             print(f"\nRunning {circuit_instance.name} with {n_qubits} qubits...")
 
-            # 阶段A: 使用黄金标准生成参考态
-            print(f"  Generating reference state using {golden_standard_key}...")
-            circuit_for_golden = circuit_instance.build(
-                platform=golden_wrapper.platform_name, n_qubits=n_qubits
-            )
+            # 阶段A: 获取参考态（使用缓存）
+            reference_state = None
+            circuit_name_key = circuit_instance.__class__.__name__.lower().replace('circuit', '')
+            
+            if cache:
+                try:
+                    print(f"  Getting reference state using cache...")
+                    reference_state = cache.get_reference_state(
+                        circuit_name=circuit_name_key,
+                        n_qubits=n_qubits,
+                        backend=golden_wrapper.backend_name,
+                        circuit_instance=circuit_instance
+                    )
+                    print(f"  Reference state obtained from cache")
+                except Exception as e:
+                    if args.verbose:
+                        print(f"  Cache failed, computing reference state: {e}")
+                    reference_state = None
+            
+            # 如果缓存失败或未启用，直接计算参考态
+            golden_result = None  # 初始化变量
+            if reference_state is None:
+                print(f"  Generating reference state using {golden_standard_key}...")
+                circuit_for_golden = circuit_instance.build(
+                    platform=golden_wrapper.platform_name, n_qubits=n_qubits
+                )
 
-            try:
-                # 执行黄金标准模拟器获得参考态
-                golden_result = golden_wrapper.execute(circuit_for_golden, n_qubits)
-                reference_state = golden_result.final_state
-                print(f"  Reference state generated successfully")
-            except Exception as e:
-                print(f"  Error generating reference state: {e}")
-                continue  # 跳过当前测试组合
+                try:
+                    # 执行黄金标准模拟器获得参考态
+                    golden_result = golden_wrapper.execute(circuit_for_golden, n_qubits)
+                    reference_state = golden_result.final_state
+                    
+                    # 如果有缓存，保存计算结果
+                    if cache:
+                        try:
+                            cache.get_reference_state(
+                                circuit_name=circuit_name_key,
+                                n_qubits=n_qubits,
+                                backend=golden_wrapper.backend_name,
+                                circuit_instance=circuit_instance
+                            )
+                        except Exception as e:
+                            if args.verbose:
+                                print(f"  Warning: Failed to cache reference state: {e}")
+                    
+                    print(f"  Reference state generated successfully")
+                except Exception as e:
+                    print(f"  Error generating reference state: {e}")
+                    continue  # 跳过当前测试组合
 
             # 阶段B: 在所有模拟器上运行基准测试
             for runner_id, wrapper_instance in simulators.items():
@@ -374,8 +470,18 @@ def run_benchmarks(
 
                     # 优化：如果是黄金标准模拟器，重用已计算的结果
                     if runner_id == golden_standard_key:
-                        golden_result.state_fidelity = 1.0  # 自身保真度为1.0
-                        result = golden_result
+                        if golden_result is not None:
+                            # 如果有之前计算的golden_result，重用它
+                            golden_result.state_fidelity = 1.0  # 自身保真度为1.0
+                            result = golden_result
+                        else:
+                            # 如果没有golden_result（从缓存获取的情况），需要重新执行
+                            result = wrapper_instance.execute(
+                                circuit=circuit_for_current,
+                                n_qubits=n_qubits,
+                                reference_state=reference_state,
+                            )
+                            result.state_fidelity = 1.0  # 自身保真度为1.0
                     else:
                         # 在其他模拟器上执行并计算保真度
                         result = wrapper_instance.execute(
@@ -466,7 +572,14 @@ def main() -> int:
 
     print(f"Available circuits: {[c.name for c in circuits]}")
 
-    # 步骤5: 执行基准测试
+    # 步骤5: 创建缓存配置
+    cache_config = None
+    if not args.no_cache and args.enable_cache:
+        cache_config = CacheConfig.from_args(args)
+        if args.verbose:
+            print(f"Cache configuration: {cache_config.to_dict()}")
+    
+    # 步骤6: 执行基准测试
     print("\nRunning benchmarks...")
     try:
         results = run_benchmarks(
@@ -474,11 +587,25 @@ def main() -> int:
             qubit_ranges=args.qubits,
             simulators=simulators,
             golden_standard_key=args.golden_standard,
+            cache_config=cache_config,
         )
 
         print(f"\nCompleted {len(results)} benchmark runs")
+        
+        # 显示缓存统计信息
+        if cache_config and args.cache_stats and cache_config.enable_cache:
+            print("\n" + "="*50)
+            print("Cache Statistics:")
+            try:
+                cache = create_cache_instance(cache_config)
+                stats = cache.get_cache_stats()
+                for key, value in stats.items():
+                    print(f"  {key}: {value}")
+            except Exception as e:
+                print(f"Error getting cache stats: {e}")
+            print("="*50)
 
-        # 步骤6: 结果后处理和报告生成
+        # 步骤7: 结果后处理和报告生成
         if results:
             print(f"\nProcessing results...")
             try:

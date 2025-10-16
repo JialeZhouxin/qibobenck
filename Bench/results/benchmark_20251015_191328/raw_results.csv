@@ -1,0 +1,15 @@
+simulator,backend,circuit_name,n_qubits,wall_time_sec,cpu_time_sec,peak_memory_mb,cpu_utilization_percent,state_fidelity,runner_id
+qibo,qibojit,qft_4_qubits,4,0.1192917000153102,0.03125,1.1164379119873047,25.0,1.0,qibo-qibojit
+pennylane,lightning.qubit,qft_4_qubits,4,0.02655029998277314,0.015625,0.08829689025878906,50.4,0.9999999999999987,pennylane-lightning.qubit
+qibo,qibojit,qft_8_qubits,8,0.002457700000377372,0.0,0.007475852966308594,0.0,1.0,qibo-qibojit
+pennylane,lightning.qubit,qft_8_qubits,8,0.028714600019156933,0.03125,0.0698394775390625,100.8,0.9999999999999984,pennylane-lightning.qubit
+qibo,qibojit,qft_12_qubits,12,0.004698899982031435,0.0,0.06662559509277344,0.0,1.0,qibo-qibojit
+pennylane,lightning.qubit,qft_12_qubits,12,0.042186599981505424,0.046875,0.18504714965820312,99.7,0.9999999999999996,pennylane-lightning.qubit
+qibo,qibojit,qft_16_qubits,16,0.016482500010170043,0.015625,1.0027713775634766,97.7,1.0,qibo-qibojit
+pennylane,lightning.qubit,qft_16_qubits,16,0.07348829999682494,0.078125,1.1885108947753906,100.2,0.9999999999999998,pennylane-lightning.qubit
+qibo,qibojit,qft_18_qubits,18,0.0451597000064794,0.0625,4.002508163452148,201.6,1.0,qibo-qibojit
+pennylane,lightning.qubit,qft_18_qubits,18,0.11343200001283549,0.125,4.230035781860352,100.0,0.9999999999999998,pennylane-lightning.qubit
+qibo,qibojit,qft_22_qubits,22,0.8165280999965034,1.984375,64.00766658782959,244.1,1.0,qibo-qibojit
+pennylane,lightning.qubit,qft_22_qubits,22,1.1727266999951098,1.09375,64.33606719970703,93.3,0.9999999999999998,pennylane-lightning.qubit
+qibo,qibojit,qft_24_qubits,24,3.4022399999957997,9.34375,256.0020637512207,274.3,1.0,qibo-qibojit
+pennylane,lightning.qubit,qft_24_qubits,24,4.925289200007683,4.890625,256.39710426330566,99.4,0.9999999999999998,pennylane-lightning.qubit

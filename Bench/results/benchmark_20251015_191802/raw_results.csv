@@ -1,0 +1,7 @@
+simulator,backend,circuit_name,n_qubits,wall_time_sec,cpu_time_sec,peak_memory_mb,cpu_utilization_percent,state_fidelity,runner_id
+qiskit,aer_simulator,qft_2_qubits,2,0.005072400002973154,0.0,0.07318878173828125,0.0,1.0,qiskit-aer_simulator
+qibo,qibojit,qft_2_qubits,2,0.07633619999978691,0.0625,1.1806020736694336,80.1,1.0,qibo-qibojit
+qiskit,aer_simulator,qft_3_qubits,3,0.002982200006954372,0.0,0.01241302490234375,0.0,1.0,qiskit-aer_simulator
+qibo,qibojit,qft_3_qubits,3,0.0007036000024527311,0.0,0.0014553070068359375,0.0,1.0,qibo-qibojit
+qiskit,aer_simulator,qft_4_qubits,4,0.0031726000015623868,0.015625,0.012881278991699219,104.2,0.9999999999999998,qiskit-aer_simulator
+qibo,qibojit,qft_4_qubits,4,0.001036100002238527,0.0,0.0020761489868164062,0.0,1.0,qibo-qibojit
