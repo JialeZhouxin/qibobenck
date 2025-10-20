@@ -105,7 +105,7 @@ ADVANCED_CONFIG = {
     "ansatz_details": {
         # Ansatz中重复块的层数(P)
         #    层数越多，表达能力越强，但参数也越多，优化难度增加
-        "n_layers": 2,
+        "n_layers": 4,
         
         # Ansatz中CNOT门的连接模式，影响其表达能力和深度
         #    'linear'   - 线性连接 (qubit_i 与 qubit_{i+1} 纠缠)
@@ -154,7 +154,7 @@ ADVANCED_CONFIG = {
         
         # 在 'shot_based' 模式下使用的测量次数
         #    数值越大，统计误差越小，但模拟时间越长
-        "n_shots": 8192,
+        "n_shots": 100,
         
         # 为每个框架指定高性能后端
         #    留空或设为None将使用其默认后端
@@ -194,7 +194,7 @@ ADVANCED_CONFIG = {
         # 资源限制设置
         #    max_memory_mb: 最大内存使用量 (MB)，超过此限制将发出警告
         #    max_time_seconds: 最大运行时间 (秒)，超过此限制将停止测试
-        "max_memory_mb": 4096,
+        "max_memory_mb": 8192,
         "max_time_seconds": 1800,
     }
 }

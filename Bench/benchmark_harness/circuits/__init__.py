@@ -5,5 +5,6 @@
 """
 
 from .qft import QFTCircuit
+from .grover import GroverCircuit
 
-__all__ = ["QFTCircuit"]
+__all__ = ["QFTCircuit", "GroverCircuit"]

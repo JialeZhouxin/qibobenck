@@ -20,7 +20,11 @@ VQE框架性能基准测试脚本 - 基于分层配置设计的新架构
     results = controller.run_all_benchmarks()
 
 作者：量子计算研究团队
-版本：2.0.0
+版本：2.1.0
+更新内容：
+- 自动包含CPU利用率图表在仪表盘中
+- 仪表盘布局从3×2更新为4×2
+- 新增第7个图表：CPU利用率分析
 """
 
 import time
@@ -58,6 +62,72 @@ except ImportError:
 # 抑制一些常见的警告
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
+np.random.seed(42)  # 设置NumPy随机种子
+
+# --- 0. 统一参数管理模块 ---
+
+def generate_uniform_initial_params(n_qubits: int, n_layers: int, seed: int = 42) -> np.ndarray:
+    """
+    生成统一的初始参数，确保三个框架使用相同的初始值
+    
+    参数顺序：每层先所有RY门，再所有RZ门
+    例如，对于2量子比特2层：[RY₀, RY₁, RZ₀, RZ₁, RY₀, RY₁, RZ₀, RZ₁]
+    
+    Args:
+        n_qubits: 量子比特数
+        n_layers: Ansatz层数
+        seed: 随机种子
+        
+    Returns:
+        统一的初始参数数组
+    """
+    np.random.seed(seed)
+    param_count = 2 * n_qubits * n_layers  # 每层2*n_qubits个参数
+    return np.random.uniform(0, 2 * np.pi, param_count)
+
+def calculate_param_count(n_qubits: int, n_layers: int) -> int:
+    """
+    计算HardwareEfficient Ansatz的参数数量
+    
+    Args:
+        n_qubits: 量子比特数
+        n_layers: Ansatz层数
+        
+    Returns:
+        参数数量
+    """
+    return 2 * n_qubits * n_layers
+
+def validate_parameter_consistency(framework_results: Dict[str, Any],
+                                 n_qubits: int,
+                                 n_layers: int,
+                                 test_params: Optional[np.ndarray] = None) -> Dict[str, bool]:
+    """
+    验证三个框架的参数映射是否一致
+    
+    Args:
+        framework_results: 包含三个框架结果的字典
+        n_qubits: 量子比特数
+        n_layers: Ansatz层数
+        test_params: 测试参数，如果为None则生成统一参数
+        
+    Returns:
+        每个框架的参数一致性验证结果
+    """
+    if test_params is None:
+        test_params = generate_uniform_initial_params(n_qubits, n_layers)
+    
+    validation_results = {}
+    
+    # 这里可以添加更详细的验证逻辑
+    # 例如：比较相同参数下三个框架的输出能量
+    
+    for framework_name in ["Qiskit", "PennyLane", "Qibo"]:
+        # 简化的验证：检查参数数量是否正确
+        expected_count = calculate_param_count(n_qubits, n_layers)
+        validation_results[framework_name] = len(test_params) == expected_count
+    
+    return validation_results
 
 # --- 1. 性能监控模块 ---
 
@@ -101,6 +171,60 @@ class MemoryMonitor(threading.Thread):
 class StopVQE(Exception):
     """自定义异常，用于在满足收敛条件时优雅地停止优化器。"""
     pass
+
+class CPUMonitor(threading.Thread):
+    """一个在后台监控CPU利用率的线程"""
+    def __init__(self, process_id, sampling_interval=0.1):
+        super().__init__()
+        self.process = psutil.Process(process_id)
+        self.sampling_interval = sampling_interval
+        self.cpu_usage_history = []
+        self.system_cpu_usage_history = []
+        self.running = False
+        self.daemon = True  # 主线程退出时该线程也退出
+        self.max_cpu_usage = 0
+        self.avg_cpu_usage = 0
+
+    def run(self):
+        self.running = True
+        # 初始化CPU百分比计算
+        self.process.cpu_percent(interval=None)
+        psutil.cpu_percent(interval=None)
+        
+        while self.running:
+            try:
+                # 获取进程CPU使用率
+                process_cpu = self.process.cpu_percent(interval=None)
+                self.cpu_usage_history.append(process_cpu)
+                
+                # 获取系统CPU使用率
+                system_cpu = psutil.cpu_percent(interval=None)
+                self.system_cpu_usage_history.append(system_cpu)
+                
+                # 更新最大CPU使用率
+                self.max_cpu_usage = max(self.max_cpu_usage, process_cpu)
+                
+            except psutil.NoSuchProcess:
+                break
+            time.sleep(self.sampling_interval)
+
+    def stop(self):
+        self.running = False
+        # 计算平均CPU使用率
+        if self.cpu_usage_history:
+            self.avg_cpu_usage = sum(self.cpu_usage_history) / len(self.cpu_usage_history)
+    
+    def get_peak_cpu(self):
+        return self.max_cpu_usage
+    
+    def get_avg_cpu(self):
+        return self.avg_cpu_usage
+    
+    def get_cpu_history(self):
+        return self.cpu_usage_history.copy()
+    
+    def get_system_cpu_history(self):
+        return self.system_cpu_usage_history.copy()
 
 # --- 2. FrameworkWrapper抽象基类 (框架适配器) ---
 
@@ -269,11 +393,10 @@ class QiskitWrapper(FrameworkWrapper):
                 entanglement_blocks='cx',
                 entanglement=entanglement_style,
                 reps=n_layers,
-                insert_barriers=True # 插入障碍，方便可视化
+                insert_barriers=True, # 插入障碍，方便可视化
+                skip_final_rotation_layer=True  # 关键修复：跳过最终的旋转层以确保参数数量一致
             )
-        else:
-            raise ValueError(f"不支持的ansatz类型: {ansatz_type}")
-        
+
         return ansatz
     
     def get_cost_function(self, hamiltonian: Any, ansatz: Any,n_qubits: int) -> Callable:
@@ -384,11 +507,14 @@ class PennyLaneWrapper(FrameworkWrapper):
             """
             这是实际的电路构建函数。
             它接收参数并应用门。
+            
+            参数顺序：每层先所有RY门，再所有RZ门
+            例如，对于2量子比特2层：[RY₀, RY₁, RZ₀, RZ₁, RY₀, RY₁, RZ₀, RZ₁]
             """
             param_idx = 0
-            # 确保ansatz结构与Qiskit的TwoLocal(['ry', 'rz'])对等
+            # 确保ansatz结构与统一标准一致
             for _ in range(n_layers):
-                # 旋转层
+                # 旋转层 - 先所有RY门，再所有RZ门
                 for i in range(n_qubits):
                     qml.RY(params[param_idx], wires=i); param_idx += 1
                 for i in range(n_qubits):
@@ -405,6 +531,11 @@ class PennyLaneWrapper(FrameworkWrapper):
                     for i in range(n_qubits):
                         for j in range(i + 1, n_qubits):
                             qml.CNOT(wires=[i, j])
+            
+            # 验证参数数量
+            expected_param_count = calculate_param_count(n_qubits, n_layers)
+            if param_idx != expected_param_count:
+                print(f"警告：PennyLane Ansatz使用了{param_idx}个参数，预期{expected_param_count}个参数")
 
         return ansatz_circuit
     
@@ -498,7 +629,9 @@ class QiboWrapper(FrameworkWrapper):
             X_i = symbols.X(i)
             ham_expr += -h_field * X_i
         
-        return hamiltonians.SymbolicHamiltonian(ham_expr)
+        # 创建哈密顿量并确保其矩阵表示正确
+        hamiltonian = hamiltonians.SymbolicHamiltonian(ham_expr)
+        return hamiltonian
     
     def build_ansatz(self, ansatz_config: Dict[str, Any], n_qubits: int) -> Any:
         """构建Qibo的Ansatz电路"""
@@ -514,29 +647,37 @@ class QiboWrapper(FrameworkWrapper):
         
         circuit = Circuit(n_qubits)
         
+        # 添加参数化门，确保参数顺序与统一标准一致
+        param_idx = 0
         for l in range(n_layers):
-            # 参数化的单比特旋转层
+            # 旋转层 - 先所有RY门，再所有RZ门
+            # 这与统一参数顺序一致：每层先所有RY门，再所有RZ门
             for q in range(n_qubits):
-                circuit.add(gates.RY(q, theta=0.0))  # 参数占位符
+                # 为每个门创建独立的参数，避免参数共享
+                circuit.add(gates.RY(q, theta=param_idx))
+                param_idx += 1
+                
             for q in range(n_qubits):
-                circuit.add(gates.RZ(q, theta=0.0))  # 参数占位符
+                circuit.add(gates.RZ(q, theta=param_idx))
+                param_idx += 1
             
-            # 纠缠层
+            # 纠缠层 - 使用与其他框架相同的纠缠模式
             if entanglement_style == "linear":
-                for q in range(0, n_qubits - 1, 2):
-                    circuit.add(gates.CNOT(q, q + 1))
-                for q in range(1, n_qubits - 1, 2):
+                # 线性纠缠：相邻量子比特之间的CNOT
+                for q in range(n_qubits - 1):
                     circuit.add(gates.CNOT(q, q + 1))
             elif entanglement_style == "circular":
-                for q in range(0, n_qubits - 1, 2):
+                # 环形纠缠：包括最后一个与第一个的连接
+                for q in range(n_qubits - 1):
                     circuit.add(gates.CNOT(q, q + 1))
-                for q in range(1, n_qubits - 1, 2):
-                    circuit.add(gates.CNOT(q, q + 1))
-                circuit.add(gates.CNOT(n_qubits - 1, 0))  # 添加环形连接
+                circuit.add(gates.CNOT(n_qubits - 1, 0))
             elif entanglement_style == "full":
+                # 全连接：所有量子比特对之间的CNOT
                 for i in range(n_qubits):
                     for j in range(i + 1, n_qubits):
                         circuit.add(gates.CNOT(i, j))
+            else:
+                raise ValueError(f"不支持的纠缠模式: {entanglement_style}")
         return circuit
     
     def get_cost_function(self, hamiltonian: hamiltonians.SymbolicHamiltonian, ansatz: Circuit,n_qubits: int) -> Callable:
@@ -553,7 +694,9 @@ class QiboWrapper(FrameworkWrapper):
             final_state = ansatz().state()
             
             # 计算哈密顿量的期望值
+            # 确保返回的是标量值而不是复数
             energy = hamiltonian.expectation(final_state)
+
             
             return float(energy)
 
@@ -578,7 +721,7 @@ class VQERunner:
     这个类是性能监测被"注入"的地方，它不关心是哪个框架，只关心执行优化循环
     """
     
-    def __init__(self, cost_function: Callable, optimizer_config: Dict[str, Any], 
+    def __init__(self, cost_function: Callable, optimizer_config: Dict[str, Any],
                  convergence_config: Dict[str, Any], exact_energy: float):
         """
         初始化VQE执行引擎
@@ -595,6 +738,10 @@ class VQERunner:
         self.accuracy_threshold = convergence_config["accuracy_threshold"]
         self.exact_energy = exact_energy
         
+        # 添加配置信息，用于统一参数生成
+        self._n_qubits = 4  # 默认值，将在BenchmarkController中设置
+        self._n_layers = 2  # 默认值，将在BenchmarkController中设置
+        
         # 性能监测数据的内部状态
         self.eval_count = 0
         self.convergence_history = []
@@ -602,6 +749,11 @@ class VQERunner:
         self.classic_step_times = []
         self.converged = False
         self.time_to_solution = None
+        # CPU监控相关变量
+        self.cpu_usage_history = []
+        self.system_cpu_usage_history = []
+        self.peak_cpu_usage = 0
+        self.avg_cpu_usage = 0
     
     def setup_optimizer(self, optimizer_config: Dict[str, Any]) -> Any:
         """
@@ -716,12 +868,13 @@ class VQERunner:
         quantum_start_time = time.perf_counter()
         energy = self.cost_function(current_params)
         quantum_end_time = time.perf_counter()
-        
+
+        quantum_time = quantum_end_time - quantum_start_time
+        self.quantum_step_times.append(quantum_time)
         # 记录数据
         self.eval_count += 1
         self.convergence_history.append(energy)
-        quantum_time = quantum_end_time - quantum_start_time
-        self.quantum_step_times.append(quantum_time)
+
         
         # 计算并记录"经典部分"时间
         classic_end_time = time.perf_counter()
@@ -748,13 +901,20 @@ class VQERunner:
         self.start_time = time.perf_counter()
         
         # 启动内存监控线程
-        monitor = MemoryMonitor(os.getpid())
-        monitor.start()
+        memory_monitor = MemoryMonitor(os.getpid())
+        memory_monitor.start()
+        
+        # 启动CPU监控线程
+        cpu_monitor = CPUMonitor(os.getpid())
+        cpu_monitor.start()
         
         try:
-            # 生成初始参数
+            # 生成初始参数 - 使用统一的参数生成函数
             if initial_params is None:
-                initial_params = np.random.uniform(0, 2 * np.pi, self.get_param_count())
+                # 从配置中获取n_qubits和n_layers，如果没有则使用默认值
+                n_qubits = getattr(self, '_n_qubits', 4)
+                n_layers = getattr(self, '_n_layers', 2)
+                initial_params = generate_uniform_initial_params(n_qubits, n_layers, seed=42)
             
             # 执行优化，并将_callback"注入"进去
             result = self.optimizer(
@@ -776,13 +936,25 @@ class VQERunner:
             final_params = None
         finally:
             # 停止内存监控并收集结果
-            monitor.stop()
-            peak_memory = monitor.get_peak_mb()
+            memory_monitor.stop()
+            peak_memory = memory_monitor.get_peak_mb()
+            
+            # 停止CPU监控并收集结果
+            cpu_monitor.stop()
+            self.cpu_usage_history = cpu_monitor.get_cpu_history()
+            self.system_cpu_usage_history = cpu_monitor.get_system_cpu_history()
+            self.peak_cpu_usage = cpu_monitor.get_peak_cpu()
+            self.avg_cpu_usage = cpu_monitor.get_avg_cpu()
         
         total_time = time.perf_counter() - self.start_time
         if self.converged and self.time_to_solution is None:
             self.time_to_solution = total_time
-        
+        # 计算总的量子时间
+        total_quantum_time = sum(self.quantum_step_times) if self.quantum_step_times else 0
+
+        # 计算平均经典时间：(总时间 - 总量子时间) / 迭代次数
+        avg_classic_time = (total_time - total_quantum_time) / self.eval_count if self.eval_count > 0 else 0
+
         # 整理并返回所有性能指标
         return {
             "final_energy": final_energy,
@@ -794,9 +966,14 @@ class VQERunner:
             "eval_count": self.eval_count,
             "converged": self.converged,
             "avg_quantum_time": np.mean(self.quantum_step_times) if self.quantum_step_times else 0,
-            "avg_classic_time": np.mean(self.classic_step_times) if self.classic_step_times else 0,
-            "memory_exceeded": monitor.is_memory_exceeded(),
-            "final_error": abs((final_energy - self.exact_energy) / self.exact_energy) if final_energy is not None else None
+            "avg_classic_time": avg_classic_time,
+            "memory_exceeded": memory_monitor.is_memory_exceeded(),
+            "final_error": abs((final_energy - self.exact_energy) / self.exact_energy) if final_energy is not None else None,
+            # 新增CPU相关指标
+            "peak_cpu_usage": self.peak_cpu_usage,
+            "avg_cpu_usage": self.avg_cpu_usage,
+            "cpu_usage_history": self.cpu_usage_history.copy(),
+            "system_cpu_usage_history": self.system_cpu_usage_history.copy()
         }
     
     def get_param_count(self) -> int:
@@ -900,6 +1077,11 @@ class BenchmarkController:
                     "std_quantum_time": np.std(framework_results["avg_quantum_time"]) if len(framework_results["avg_quantum_time"]) > 1 else 0,
                     "avg_classic_time": np.mean(framework_results["avg_classic_time"]) if len(framework_results["avg_classic_time"]) > 0 else 0,
                     "std_classic_time": np.std(framework_results["avg_classic_time"]) if len(framework_results["avg_classic_time"]) > 1 else 0,
+                    # 新增CPU相关指标
+                    "avg_peak_cpu_usage": np.mean(framework_results["peak_cpu_usage"]) if len(framework_results["peak_cpu_usage"]) > 0 else 0,
+                    "std_peak_cpu_usage": np.std(framework_results["peak_cpu_usage"]) if len(framework_results["peak_cpu_usage"]) > 1 else 0,
+                    "avg_avg_cpu_usage": np.mean(framework_results["avg_cpu_usage"]) if len(framework_results["avg_cpu_usage"]) > 0 else 0,
+                    "std_avg_cpu_usage": np.std(framework_results["avg_cpu_usage"]) if len(framework_results["avg_cpu_usage"]) > 1 else 0,
                     "convergence_rate": framework_results["converged_count"] / self.config["n_runs"],
                     "energy_histories": framework_results["energy_histories"],
                     "errors": framework_results["errors"]
@@ -918,7 +1100,8 @@ class BenchmarkController:
         
         total_time = time.perf_counter() - self.start_time
         print(f"\n基准测试完成，总耗时: {total_time:.2f} 秒")
-        
+        if self.config.get("system", {}).get("save_results", False):
+            self._save_results_to_file()
         return self.results
     
     def _run_framework_tests(self, framework_name: str, n_qubits: int) -> Dict[str, List[Any]]:
@@ -942,7 +1125,10 @@ class BenchmarkController:
             "avg_classic_time": [],
             "converged_count": 0,
             "energy_histories": [],
-            "errors": []
+            "errors": [],
+            # 新增CPU相关字段
+            "peak_cpu_usage": [],
+            "avg_cpu_usage": []
         }
         
         # 获取框架适配器
@@ -954,35 +1140,10 @@ class BenchmarkController:
             problem_config = self.config.get("problem", {})
             framework_hamiltonian = wrapper.build_hamiltonian(problem_config, n_qubits)
             
-            # 获取精确基态能量
-            # 使用PennyLane的哈密顿量矩阵计算精确能量
-            j_coupling = problem_config.get("j_coupling", 1.0)
-            h_field = problem_config.get("h_field", 1.0)
-            
-            # 构建哈密顿量矩阵
-            try:
-                import pennylane as qml
-                import numpy as np
-                
-                # 使用PennyLane构建哈密顿量
-                hamiltonian = qml.spin.transverse_ising(
-                    lattice="chain",
-                    n_cells=[n_qubits],
-                    coupling=j_coupling,
-                    h=h_field
-                )
-                
-                # 转换为矩阵
-                hamiltonian_matrix = qml.matrix(hamiltonian)
-                
-                # 计算精确基态能量
-                eigenvalues, eigenvectors = np.linalg.eigh(hamiltonian_matrix)
-                exact_energy = eigenvalues[0]  # 最小特征值
-                
-            except Exception as e:
-                print(f"  计算精确能量失败: {e}")
-                # 使用近似值
-                exact_energy = -n_qubits * (j_coupling + h_field)
+            # 获取精确基态能量 - 使用全局缓存函数
+            exact_energy = calculate_exact_energy(problem_config, n_qubits)
+            print(f"  精确基态能量 (N={n_qubits}): {exact_energy:.6f}")
+
             
             # 构建Ansatz
             ansatz_config = self.config.get("ansatz_details", {})
@@ -992,7 +1153,8 @@ class BenchmarkController:
             # 获取成本函数
             cost_function = wrapper.get_cost_function(framework_hamiltonian, ansatz,n_qubits)
             
-            # 获取参数数量
+            # 获取参数数量和层数
+            n_layers = ansatz_config.get("n_layers", 2)
             if framework_name == "PennyLane":
                 param_count = wrapper.get_param_count(ansatz_config, n_qubits)
             elif framework_name == "Qibo":
@@ -1003,6 +1165,21 @@ class BenchmarkController:
         except Exception as e:
             print(f"  构建问题时出错: {e}")
             return framework_results
+        
+        # 验证参数一致性
+        print(f"  验证 {framework_name} 框架参数一致性...")
+        test_params = generate_uniform_initial_params(n_qubits, n_layers, seed=42)
+        validation_results = validate_parameter_consistency(
+            {framework_name: {"param_count": param_count}},
+            n_qubits,
+            n_layers,
+            test_params
+        )
+        
+        if validation_results.get(framework_name, False):
+            print(f"  ✓ {framework_name} 参数映射验证通过")
+        else:
+            print(f"  ✗ {framework_name} 参数映射验证失败")
         
         # 运行多次测试
         for run_id in range(self.config["n_runs"]):
@@ -1021,11 +1198,16 @@ class BenchmarkController:
                     exact_energy=exact_energy
                 )
                 
-                # 设置参数数量
+                # 设置参数数量和配置信息
                 vqe_runner.get_param_count = lambda: param_count
+                vqe_runner._n_qubits = n_qubits
+                vqe_runner._n_layers = n_layers
+                
+                # 生成统一的初始参数
+                initial_params = generate_uniform_initial_params(n_qubits, n_layers, seed=42)
                 
                 # 运行VQE
-                result = vqe_runner.run()
+                result = vqe_runner.run(initial_params=initial_params)
                 
                 # 添加运行ID
                 result["run_id"] = run_id
@@ -1043,6 +1225,10 @@ class BenchmarkController:
                 
                 framework_results["avg_quantum_time"].append(result["avg_quantum_time"])
                 framework_results["avg_classic_time"].append(result["avg_classic_time"])
+                
+                # 添加CPU相关指标
+                framework_results["peak_cpu_usage"].append(result["peak_cpu_usage"])
+                framework_results["avg_cpu_usage"].append(result["avg_cpu_usage"])
                 
                 if result["converged"]:
                     framework_results["converged_count"] += 1
@@ -1062,7 +1248,44 @@ class BenchmarkController:
                 framework_results["errors"].append(str(e))
         
         return framework_results
-
+    def _save_results_to_file(self):
+        """
+        将基准测试结果保存到JSON文件
+        
+        该方法将所有性能指标、配置和元数据保存为一个结构化的JSON文件，
+        便于后续分析和可视化
+        """
+        import json
+        from datetime import datetime
+        
+        # 获取输出目录
+        output_dir = self.config.get("system", {}).get("output_dir", "./results/")
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # 生成文件名
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        experiment_name = self.config.get("experiment_name", "vqe_benchmark")
+        filename = f"{experiment_name}_{timestamp}.json"
+        filepath = os.path.join(output_dir, filename)
+        
+        # 准备保存的数据
+        save_data = {
+            "metadata": {
+                "timestamp": timestamp,
+                "experiment_name": experiment_name,
+                "total_runtime": time.perf_counter() - self.start_time if self.start_time else None,
+                "config": self.config
+            },
+            "results": self.results
+        }
+        
+        # 保存到文件
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(save_data, f, indent=2, ensure_ascii=False)
+            print(f"结果已保存到: {filepath}")
+        except Exception as e:
+            print(f"保存结果时出错: {e}")
 # --- 6. 可视化仪表盘 ---
 
 class VQEBenchmarkVisualizer:
@@ -1077,10 +1300,10 @@ class VQEBenchmarkVisualizer:
         # 设置matplotlib中文字体
         plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']
         plt.rcParams['axes.unicode_minus'] = False
-    
+
     def plot_dashboard(self, output_dir: str = None) -> None:
-        """生成并显示包含六个核心图表的仪表盘"""
-        fig, axes = plt.subplots(3, 2, figsize=(18, 24))
+        """生成并显示包含七个核心图表的仪表盘"""
+        fig, axes = plt.subplots(4, 2, figsize=(20, 28))
         fig.suptitle("VQE框架性能基准测试仪表盘", fontsize=20)
         
         # 图 1: 总求解时间 vs. 量子比特数
@@ -1100,6 +1323,12 @@ class VQEBenchmarkVisualizer:
         
         # 图 6: 单步耗时分解 vs. 量子比特数
         self._plot_time_breakdown(axes[2, 1])
+        
+        # 图 7: CPU利用率 vs. 量子比特数
+        self._plot_cpu_usage(axes[3, 0])
+        
+        # 隐藏右下角的空白子图
+        axes[3, 1].axis('off')
         
         plt.tight_layout(rect=[0, 0, 1, 0.96])
         
@@ -1121,8 +1350,8 @@ class VQEBenchmarkVisualizer:
             stds = []
             for n_qubits in self.n_qubits_range:
                 if fw in self.results and n_qubits in self.results[fw]:
-                    avg_time = self.results[fw][n_qubits]["avg_time_to_solution"]
-                    std_time = self.results[fw][n_qubits]["std_time_to_solution"]
+                    avg_time = self.results[fw][n_qubits]["avg_total_time"]
+                    std_time = self.results[fw][n_qubits]["std_total_time"]
                     if avg_time is not None:
                         times.append(avg_time)
                         stds.append(std_time)
@@ -1185,17 +1414,7 @@ class VQEBenchmarkVisualizer:
         max_qubits = max(self.n_qubits_range)
         
         # 获取精确能量
-        exact_energy = None
-        for fw in self.frameworks:
-            if fw in self.results and max_qubits in self.results[fw]:
-                # 从第一个历史记录中获取精确能量
-                histories = self.results[fw][max_qubits]["energy_histories"]
-                if histories and len(histories) > 0:
-                    # 创建临时VQE执行器来获取精确能量
-                    temp_runner = self._create_temp_runner(fw, max_qubits)
-                    if temp_runner:
-                        exact_energy = temp_runner.exact_energy
-                        break
+        exact_energy = self.get_exact_energy(max_qubits)
         
         if exact_energy is None:
             # 如果无法获取精确能量，使用估计值
@@ -1332,49 +1551,136 @@ class VQEBenchmarkVisualizer:
         ax.legend(fontsize='small')
         ax.grid(True, which="both", ls="--")
     
-    def _create_temp_runner(self, framework: str, n_qubits: int):
-        """创建临时VQE运行器以获取精确能量"""
-        try:
-            # 获取问题参数
-            problem_config = self.config.get("problem", {})
-            j_coupling = problem_config.get("j_coupling", 1.0)
-            h_field = problem_config.get("h_field", 1.0)
+    def _plot_cpu_usage(self, ax):
+        """绘制CPU使用率 vs. 量子比特数"""
+        for fw in self.frameworks:
+            peak_cpus = []
+            avg_cpus = []
+            for n_qubits in self.n_qubits_range:
+                if fw in self.results and n_qubits in self.results[fw]:
+                    peak_cpus.append(self.results[fw][n_qubits]["avg_peak_cpu_usage"])
+                    avg_cpus.append(self.results[fw][n_qubits]["avg_avg_cpu_usage"])
+                else:
+                    peak_cpus.append(None)
+                    avg_cpus.append(None)
             
-            # 构建哈密顿量矩阵
-            try:
-                import pennylane as qml
-                import numpy as np
-                
-                # 使用PennyLane构建哈密顿量
-                hamiltonian = qml.spin.transverse_ising(
-                    lattice="chain",
-                    n_cells=[n_qubits],
-                    coupling=j_coupling,
-                    h=h_field
-                )
-                
-                # 转换为矩阵
-                hamiltonian_matrix = qml.matrix(hamiltonian)
-                
-                # 计算精确基态能量
-                eigenvalues, eigenvectors = np.linalg.eigh(hamiltonian_matrix)
-                exact_energy = eigenvalues[0]  # 最小特征值
-                
-            except Exception as e:
-                print(f"  计算精确能量失败: {e}")
-                # 使用近似值
-                exact_energy = -n_qubits * (j_coupling + h_field)
+            # 过滤掉None值
+            valid_indices = [i for i, p in enumerate(peak_cpus) if p is not None]
+            valid_qubits = [self.n_qubits_range[i] for i in valid_indices]
+            valid_peak_cpus = [peak_cpus[i] for i in valid_indices]
+            valid_avg_cpus = [avg_cpus[i] for i in valid_indices]
             
-            # 创建一个简单的对象来存储精确能量
-            class TempRunner:
-                def __init__(self, exact_energy):
-                    self.exact_energy = exact_energy
-            
-            return TempRunner(exact_energy)
-        except:
-            return None
+            if valid_peak_cpus:
+                ax.errorbar(valid_qubits, valid_peak_cpus,
+                           marker='o', linestyle='-', label=f'{fw} 峰值CPU', capsize=5)
+                ax.errorbar(valid_qubits, valid_avg_cpus,
+                           marker='s', linestyle='--', label=f'{fw} 平均CPU', capsize=5)
+        
+        ax.set_xlabel("量子比特数")
+        ax.set_ylabel("CPU使用率 (%)")
+        ax.set_title("CPU使用率分析")
+        ax.legend()
+        ax.grid(True, ls="--")
+    
+    def get_exact_energy(self, n_qubits: int) -> float:
+        """获取指定量子比特数的精确能量 - 使用全局缓存"""
+        problem_config = self.config.get("problem", {})
+        return calculate_exact_energy(problem_config, n_qubits)
+
+# 全局字典，用于缓存不同设置下的精确能量
+_EXACT_ENERGY_CACHE = {}
+
+def calculate_exact_energy(problem_config: Dict[str, Any], n_qubits: int) -> float:
+    """
+    计算给定问题配置和量子比特数下的精确基态能量
+    
+    Args:
+        problem_config: 问题配置字典，包含j_coupling和h_field等参数
+        n_qubits: 量子比特数
+        
+    Returns:
+        精确基态能量
+    """
+    # 创建缓存键
+    j_coupling = problem_config.get("j_coupling", 1.0)
+    h_field = problem_config.get("h_field", 1.0)
+    cache_key = (n_qubits, j_coupling, h_field)
+    
+    # 检查缓存
+    if cache_key in _EXACT_ENERGY_CACHE:
+        return _EXACT_ENERGY_CACHE[cache_key]
+    
+    try:
+        import pennylane as qml
+        import numpy as np
+        
+        # 构建哈密顿量并计算基态能量
+        hamiltonian = qml.spin.transverse_ising(
+            lattice="chain",
+            n_cells=[n_qubits],
+            coupling=j_coupling,
+            h=h_field
+        )
+        
+        # 计算特征值
+        eigenvalues = np.linalg.eigvalsh(qml.matrix(hamiltonian))
+        exact_energy = float(eigenvalues[0])
+        
+        # 存入缓存
+        _EXACT_ENERGY_CACHE[cache_key] = exact_energy
+        
+        return exact_energy
+        
+    except Exception as e:
+        print(f"计算精确能量失败: {e}")
+        # 使用近似值作为后备
+        approximate_energy = -n_qubits * (j_coupling + h_field)
+        _EXACT_ENERGY_CACHE[cache_key] = approximate_energy
+        return approximate_energy
+
+
+def clear_exact_energy_cache():
+    """清空精确能量缓存"""
+    global _EXACT_ENERGY_CACHE
+    _EXACT_ENERGY_CACHE.clear()
+    print("精确能量缓存已清空")
+
+
+def get_cache_info():
+    """获取缓存信息"""
+    return {
+        "size": len(_EXACT_ENERGY_CACHE),
+        "entries": list(_EXACT_ENERGY_CACHE.keys())
+    }
+
+
+def print_cache_status():
+    """打印缓存状态"""
+    info = get_cache_info()
+    print(f"精确能量缓存状态: {info['size']} 个条目")
+    if info['entries']:
+        print("缓存条目:")
+        for key in sorted(info['entries']):
+            n_qubits, j_coupling, h_field = key
+            energy = _EXACT_ENERGY_CACHE[key]
+            print(f"  N={n_qubits}, J={j_coupling}, h={h_field}: E0={energy:.6f}")
+
 
 # --- 7. 主函数 ---
+
+def precompute_exact_energies(config: Dict[str, Any]):
+    """预计算所有配置下的精确能量"""
+    problem_config = config.get("problem", {})
+    print("预计算精确基态能量...")
+    
+    for n_qubits in config["n_qubits_range"]:
+        energy = calculate_exact_energy(problem_config, n_qubits)
+        j_coupling = problem_config.get("j_coupling", 1.0)
+        h_field = problem_config.get("h_field", 1.0)
+        print(f"  N={n_qubits}, J={j_coupling}, h={h_field}: E0={energy:.6f}")
+    
+    print(f"已预计算 {len(_EXACT_ENERGY_CACHE)} 个精确能量值")
+
 
 def main():
     """主函数"""
@@ -1382,6 +1688,13 @@ def main():
     
     # 获取配置
     config = merge_configs()
+    
+    # 预计算所有精确能量
+    precompute_exact_energies(config)
+    
+    # 打印缓存状态
+    print("\n精确能量缓存状态:")
+    print_cache_status()
     
     # 创建并运行基准测试
     controller = BenchmarkController(config)

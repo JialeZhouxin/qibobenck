@@ -59,3 +59,5 @@ logs/
 # Qibo specific
 *.qasm
 Bench/.benchmark_cache/
+.joycode/
+.codebuddy/

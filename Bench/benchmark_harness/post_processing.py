@@ -40,6 +40,10 @@ def analyze_results(results_list: List[Any], output_dir: str, repeat: int = 1):
             "state_fidelity": result.fidelity_mean if result.fidelity_mean else result.state_fidelity,
             "fidelity_std": result.fidelity_std if result.fidelity_std else 0.0,
             "repeat": repeat,
+            # 添加电路信息字段
+            "circuit_depth": getattr(result, 'circuit_info', {}).get("circuit_depth", None),
+            "total_gates": getattr(result, 'circuit_info', {}).get("total_gates", None),
+            "circuit_summary": getattr(result, 'circuit_info', {}).get("circuit_summary", ""),
         })
 
     df = pd.DataFrame(data)
@@ -309,6 +313,34 @@ def generate_summary_report(df: pd.DataFrame, output_dir: str, repeat: int = 1):
         f.write(
             f"- 量子比特数范围: {df['n_qubits'].min()} - {df['n_qubits'].max()}\n\n"
         )
+
+        # 电路信息
+        if "circuit_depth" in df.columns and not df["circuit_depth"].isna().all():
+            f.write("## 电路信息\n\n")
+            
+            # 按电路和量子比特数分组显示电路信息
+            circuit_info = df.groupby(["circuit_name", "n_qubits"]).agg({
+                "circuit_depth": "first",
+                "total_gates": "first"
+            }).reset_index()
+            
+            f.write("### 电路复杂度\n\n")
+            f.write("| 电路名称 | 量子比特数 | 电路深度 | 门总数 |\n")
+            f.write("|---------|-----------|---------|--------|\n")
+            
+            for _, row in circuit_info.iterrows():
+                f.write(f"| {row['circuit_name']} | {row['n_qubits']} | {row['circuit_depth']} | {row['total_gates']} |\n")
+            
+            f.write("\n")
+            
+            # 如果有电路摘要，添加一个示例
+            if "circuit_summary" in df.columns:
+                sample_summary = df["circuit_summary"].dropna().iloc[0] if not df["circuit_summary"].dropna().empty else ""
+                if sample_summary:
+                    f.write("### 电路摘要示例\n\n")
+                    f.write("```\n")
+                    f.write(sample_summary)
+                    f.write("\n```\n\n")
 
         # 性能指标
         f.write("## 性能指标\n\n")

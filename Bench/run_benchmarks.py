@@ -93,7 +93,7 @@ def parse_arguments() -> argparse.Namespace:
         "--circuits",
         nargs="+",
         default=["qft"],
-        choices=["qft"],
+        choices=["qft","grover"],
         help="要运行的基准测试电路列表",
     )
 
@@ -331,6 +331,9 @@ def create_circuit_instances(circuit_names: List[str]) -> List[BenchmarkCircuit]
             if circuit_name.lower() == "qft":
                 # 特殊处理QFT电路，使用QFTCircuit类名
                 circuit_class = getattr(module, "QFTCircuit")
+            elif circuit_name.lower() == "grover":
+                # 特殊处理Grover电路，使用GroverCircuit类名
+                circuit_class = getattr(module, "GroverCircuit")
             else:
                 # 其他电路使用标准命名规则：{CircuitName}Circuit
                 circuit_class = getattr(module, f"{circuit_name.title()}Circuit")
@@ -466,7 +469,7 @@ def run_benchmarks(
                     )
                     # 使用第一次运行的结果作为参考态
                     reference_state = golden_results[0].final_state
-                    
+                     
                     # 如果有缓存，保存计算结果
                     if cache:
                         try:
@@ -494,7 +497,31 @@ def run_benchmarks(
                     circuit_for_current = circuit_instance.build(
                         platform=wrapper_instance.platform_name, n_qubits=n_qubits
                     )
-
+                    # 收集电路信息
+                    circuit_info = {}
+                    if wrapper_instance.platform_name == "qibo":
+                        try:
+                            circuit_summary = circuit_for_current.summary()
+                            circuit_info["circuit_summary"] = str(circuit_summary)
+                            
+                            # 解析summary获取关键指标
+                            summary_lines = str(circuit_summary).split('\n')
+                            for line in summary_lines:
+                                if "depth" in line.lower() and "=" in line:
+                                    # 处理 "Circuit depth = 14" 格式
+                                    circuit_info["circuit_depth"] = int(line.split("=")[-1].strip())
+                                elif "qubits" in line.lower() and "=" in line:
+                                    # 处理 "Number of qubits = 4" 格式
+                                    circuit_info["n_qubits_in_circuit"] = int(line.split("=")[-1].strip())
+                                elif "gates" in line.lower() and "total" in line.lower() and "=" in line:
+                                    # 处理 "Total number of gates = 20" 格式
+                                    circuit_info["total_gates"] = int(line.split("=")[-1].strip())
+                            
+                            if args.verbose:
+                                print(f"    Circuit summary:\n{circuit_summary}")
+                        except Exception as e:
+                            if args.verbose:
+                                print(f"    Warning: Failed to get circuit summary: {e}")
                     # 执行基准测试
                     results = wrapper_instance.execute(
                         circuit=circuit_for_current,
@@ -503,6 +530,10 @@ def run_benchmarks(
                         repeat=args.repeat,
                         warmup_runs=args.warmup_runs
                     )
+
+                    # 将电路信息添加到结果对象中（使用setattr避免属性错误）
+                    for result in results:
+                        setattr(result, 'circuit_info', circuit_info)
 
                     # 如果是黄金标准模拟器，设置保真度为1.0
                     if runner_id == golden_standard_key:
@@ -663,6 +694,10 @@ def main() -> int:
                             "cpu_utilization_percent": result.cpu_utilization_percent,
                             "state_fidelity": result.fidelity_mean if result.fidelity_mean else result.state_fidelity,
                             "fidelity_std": result.fidelity_std if result.fidelity_std else 0.0,
+                            # 添加电路信息字段
+                            "circuit_depth": getattr(result, 'circuit_info', {}).get("circuit_depth", None),
+                            "total_gates": getattr(result, 'circuit_info', {}).get("total_gates", None),
+                            "circuit_summary": getattr(result, 'circuit_info', {}).get("circuit_summary", ""),
                         }
                     )
                 
