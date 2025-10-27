@@ -1,0 +1,10 @@
+simulator,backend,circuit_name,n_qubits,wall_time_sec,wall_time_std,cpu_time_sec,cpu_time_std,peak_memory_mb,memory_std,cpu_utilization_percent,state_fidelity,fidelity_std,repeat,circuit_depth,total_gates,circuit_summary,runner_id
+qibo,qibojit,grover_15_qubits,15,1.0369500666468714,0.006316997936830576,2.9635416666666665,0.2643966697186887,1.0056829452514648,0.00036024282019393164,294.0,0.9999999999984901,0.0,3,854.0,8820.0,"Circuit depth = 854
+Total number of gates = 8820
+Number of qubits = 15
+Most common gates:
+h: 4275
+x: 4260
+z: 284
+measure: 1",qibo-qibojit
+qiskit,aer_simulator,grover_15_qubits,15,1.5123812333525468,0.05071873727558821,2.015625,0.10245997694221876,0.42542489369710285,0.0005176197120952709,138.3,0.9999868295182218,0.0,3,,,,qiskit-aer_simulator

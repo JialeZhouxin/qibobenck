@@ -1,0 +1,11 @@
+simulator,backend,circuit_name,n_qubits,wall_time_sec,wall_time_std,cpu_time_sec,cpu_time_std,peak_memory_mb,memory_std,cpu_utilization_percent,state_fidelity,fidelity_std,repeat,circuit_depth,total_gates,circuit_summary,runner_id
+qibo,qibojit,grover_15_qubits,15,0.9860392666887492,0.03462169862004691,3.3802083333333335,0.05487319662944135,1.0047852198282878,0.0010215148938412194,322.8,0.9999999999984901,0.0,3,854.0,8820.0,"Circuit depth = 854
+Total number of gates = 8820
+Number of qubits = 15
+Most common gates:
+h: 4275
+x: 4260
+z: 284
+measure: 1",qibo-qibojit
+qiskit,aer_simulator,grover_15_qubits,15,1.4642555333751563,0.039880928792121934,2.0833333333333335,0.036084391824351615,0.4257313410441081,0.0006350499538028898,137.5,0.9999868295182218,0.0,3,,,,qiskit-aer_simulator
+pennylane,lightning.qubit,grover_15_qubits,15,3.0651222666492686,0.10417769399726981,3.03125,0.125,5.608267466227214,0.03008237019626161,100.0,0.9999999999983972,1.3597399555105182e-16,3,,,,pennylane-lightning.qubit

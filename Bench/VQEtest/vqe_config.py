@@ -38,12 +38,12 @@ import copy
 CONFIG = {
     # 1. 你想解决什么规模的问题？
     #    量子比特数范围，定义了测试问题的规模。建议从小范围开始，如[4, 6, 8]
-    "n_qubits_range": [4, 6, 8],
+    "n_qubits_range": [12],
     
     # 2. 你想对比哪些框架？
     #    支持的框架: "Qiskit", "PennyLane", "Qibo"
     #    可以选择一个或多个框架进行对比测试
-    "frameworks_to_test": ["Qiskit", "PennyLane", "Qibo"],
+    "frameworks_to_test": ["Qibo"],
     
     # 3. 你想用哪种主流算法思路？
     #    'HardwareEfficient' - 通用硬件高效ansatz，适用于一般问题
@@ -54,12 +54,12 @@ CONFIG = {
     #    'COBYLA' - 无梯度优化器，适合参数空间较大的问题
     #    'SPSA' - 模拟梯度优化器，适合噪声环境
     #    'L-BFGS-B' - 精确梯度优化器，适合光滑问题
-    "optimizer": "COBYLA",
+    "optimizer": "L-BFGS-B",
     
     # 5. 你想让结果多可靠？(运行次数)
     #    运行次数越多，统计结果越可靠，但运行时间越长
     #    建议快速测试时使用3-5次，正式测试时使用10次或更多
-    "n_runs": 3,
+    "n_runs": 1,
     
     # (可选) 实验命名，用于结果保存
     #    如果不提供，系统将自动生成基于时间戳的名称
@@ -122,12 +122,13 @@ ADVANCED_CONFIG = {
             # COBYLA优化器的参数
             #    tol: 收敛容差，数值越小精度要求越高
             #    rhobeg: 初始步长，影响搜索范围
-            "COBYLA": {"tol": 1e-5, "rhobeg": 1.0},
+            #    rhoend: 最小步长，影响搜索精度
+            "COBYLA": {"tol": 1e-10, "rhobeg": 0.5,"rhoend": 1e-10  },
             
             # SPSA优化器的参数
             #    learning_rate: 学习率，控制参数更新步长
             #    perturbation: 扰动参数，影响梯度估计
-            "SPSA": {"learning_rate": 0.05, "perturbation": 0.05},
+            "SPSA": {"learning_rate": 0.05, "perturbation": 1},
             
             # L-BFGS-B优化器的参数
             #    ftol: 函数收敛容差
@@ -154,7 +155,7 @@ ADVANCED_CONFIG = {
         
         # 在 'shot_based' 模式下使用的测量次数
         #    数值越大，统计误差越小，但模拟时间越长
-        "n_shots": 100,
+        "n_shots": 1000,
         
         # 为每个框架指定高性能后端
         #    留空或设为None将使用其默认后端
@@ -195,7 +196,7 @@ ADVANCED_CONFIG = {
         #    max_memory_mb: 最大内存使用量 (MB)，超过此限制将发出警告
         #    max_time_seconds: 最大运行时间 (秒)，超过此限制将停止测试
         "max_memory_mb": 8192,
-        "max_time_seconds": 1800,
+        "max_time_seconds": 3600,
     }
 }
 

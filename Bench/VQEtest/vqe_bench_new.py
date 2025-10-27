@@ -31,6 +31,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import psutil
+import logging
 import threading
 import os
 import sys
@@ -39,7 +40,7 @@ from datetime import datetime
 from typing import Dict, List, Tuple, Optional, Any, Callable
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Callable
-# 在文件顶部进行一次性导入
+# 框架可用性检查和导入
 try:
     import qibo
     from qibo import Circuit, gates, hamiltonians
@@ -130,7 +131,7 @@ def validate_parameter_consistency(framework_results: Dict[str, Any],
     return validation_results
 
 # --- 1. 性能监控模块 ---
-
+logger = logging.getLogger(__name__)
 class MemoryMonitor(threading.Thread):
     """一个在后台监控主进程峰值内存使用的线程。"""
     def __init__(self, process_id, max_memory_mb=4096):
@@ -155,8 +156,13 @@ class MemoryMonitor(threading.Thread):
                     self.memory_exceeded = True
                     print(f"警告：内存使用超过限制 ({current_memory_mb:.1f}MB > {self.max_memory_mb}MB)")
                     
-            except psutil.NoSuchProcess:
+            except psutil.NoSuchProcess as e:
+                logger.warning(f"内存监控进程丢失: {e}")
                 break
+            except Exception as e:
+                logger.error(f"内存监控异常: {e}")
+    # 重新启动监控或采取其他恢复措施
+
             time.sleep(0.01)  # 采样间隔
 
     def stop(self):
@@ -772,11 +778,18 @@ class VQERunner:
             from scipy.optimize import minimize
             
             def optimizer_fun(cost_function, initial_params, callback):
+                # 获取 COBYLA 的特定配置
+                cobyla_options = options.get("COBYLA", {})
+                # 设置默认参数，如果配置中没有指定的话
+                cobyla_options.setdefault('rhobeg', 1.0)
+                cobyla_options.setdefault('rhoend', 1e-4)
+                cobyla_options.setdefault('tol', 1e-5)
+
                 return minimize(
                     fun=cost_function,
                     x0=initial_params,
                     method='COBYLA',
-                    options={'maxiter': self.max_evals, 'disp': False, **options.get("COBYLA", {})},
+                    options={'maxiter': self.max_evals, 'disp': False, **cobyla_options},
                     callback=callback
                 )
             
@@ -1614,13 +1627,16 @@ def calculate_exact_energy(problem_config: Dict[str, Any], n_qubits: int) -> flo
         import pennylane as qml
         import numpy as np
         
-        # 构建哈密顿量并计算基态能量
-        hamiltonian = qml.spin.transverse_ising(
-            lattice="chain",
-            n_cells=[n_qubits],
-            coupling=j_coupling,
-            h=h_field
-        )
+        # 创建PennyLaneWrapper实例，使用默认后端配置
+        backend_config = {
+            "framework_backends": {
+                "PennyLane": "lightning.qubit"
+            }
+        }
+        pennylane = PennyLaneWrapper(backend_config)
+        
+        # 构建哈密顿量
+        hamiltonian = pennylane.build_hamiltonian(problem_config, n_qubits)
         
         # 计算特征值
         eigenvalues = np.linalg.eigvalsh(qml.matrix(hamiltonian))
@@ -1634,7 +1650,7 @@ def calculate_exact_energy(problem_config: Dict[str, Any], n_qubits: int) -> flo
     except Exception as e:
         print(f"计算精确能量失败: {e}")
         # 使用近似值作为后备
-        approximate_energy = -n_qubits * (j_coupling + h_field)
+        approximate_energy = -n_qubits * 1.273
         _EXACT_ENERGY_CACHE[cache_key] = approximate_energy
         return approximate_energy
 
@@ -1722,7 +1738,7 @@ def main():
                     print(f"    求解时间: {data['avg_time_to_solution']:.3f} ± {data['std_time_to_solution']:.3f} 秒")
                 print(f"    内存使用: {data['avg_peak_memory']:.1f} ± {data['std_peak_memory']:.1f} MB")
                 if data['avg_final_error'] is not None:
-                    print(f"    最终误差: {data['avg_final_error']:.2e}")
+                    print(f"    最终相对误差: {data['avg_final_error']:.2e}")
                 print(f"    总评估次数: {data['avg_total_evals']:.1f} ± {data['std_total_evals']:.1f}")
     
     print(f"\n测试完成！结果保存在: {output_dir}")

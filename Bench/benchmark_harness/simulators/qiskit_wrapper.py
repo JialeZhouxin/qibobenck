@@ -51,6 +51,14 @@ class QiskitWrapper(SimulatorInterface):
                 f"Failed to initialize Qiskit backend '{backend_name}': {e}"
             )
 
+    def _has_save_statevector(self, circuit: Any) -> bool:
+        """检查电路是否已经包含save_statevector指令"""
+        # 检查电路的指令列表中是否已有save_statevector
+        for instruction in circuit.data:
+            if instruction[0].name == 'save_statevector':
+                return True
+        return False
+    
     def execute(
         self,
         circuit: Any,
@@ -67,11 +75,17 @@ class QiskitWrapper(SimulatorInterface):
             
         results = []
         
+        # 检查是否需要添加save_statevector指令
+        needs_save_instruction = not self._has_save_statevector(circuit)
+        
         # 预热运行
         for _ in range(warmup_runs):
             try:
-                circuit.save_statevector()
-                job = self.backend_instance.run(circuit, shots=1)
+                # 创建电路副本以避免修改原始电路
+                warmup_circuit = circuit.copy()
+                if needs_save_instruction:
+                    warmup_circuit.save_statevector()
+                job = self.backend_instance.run(warmup_circuit, shots=1)
                 job.result()
             except Exception:
                 pass  # 忽略预热运行的错误
@@ -89,9 +103,13 @@ class QiskitWrapper(SimulatorInterface):
             
             with collector:
                 try:
+                    # 创建电路副本以避免修改原始电路
+                    run_circuit = circuit.copy()
+                    
                     # 执行电路
-                    circuit.save_statevector()
-                    job = self.backend_instance.run(circuit, shots=1)
+                    if needs_save_instruction:
+                        run_circuit.save_statevector()
+                    job = self.backend_instance.run(run_circuit, shots=1)
                     result = job.result()
 
                     # 获取状态向量
@@ -99,7 +117,7 @@ class QiskitWrapper(SimulatorInterface):
                         final_state = result.get_statevector()
                     else:
                         # 备用方法
-                        final_state = Statevector.from_instruction(circuit).data
+                        final_state = Statevector.from_instruction(run_circuit).data
                     
                     final_states.append(final_state)
                 except Exception as e:

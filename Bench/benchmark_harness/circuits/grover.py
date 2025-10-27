@@ -140,10 +140,10 @@ class GroverCircuit(BenchmarkCircuit):
         # 计算Grover迭代次数
         n_iterations = round(np.round((np.pi/(2 * np.arcsin(1/ np.sqrt(2**n_qubits))) - 1)/2))
         
-        def grover_circuit():
+        def grover_circuit(wires):
             # 初始化Hadamard门
             for j in range(n_qubits):
-                qml.Hadamard(wires=j)
+                qml.Hadamard(wires=wires[j])
             
             # Grover迭代
             for _ in range(n_iterations):
