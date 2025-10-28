@@ -4,10 +4,17 @@
 这个模块包含了核心抽象接口和数据结构的测试用例。
 """
 
+import sys
+import os
+
+# 添加Bench目录到Python路径
+bench_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, bench_dir)
+
 import numpy as np
 import pytest
 
-from benchmark_harness.abstractions import (BenchmarkCircuit, BenchmarkResult,
+from src.abstractions import (BenchmarkCircuit, BenchmarkResult,
                                             SimulatorInterface)
 
 

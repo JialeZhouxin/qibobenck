@@ -1,0 +1,178 @@
+================================================================================
+Python File Import Issues Check Report
+================================================================================
+
+Check Statistics:
+- Total files checked: 67
+- Total issues found: 41
+- Failed import modules: 41
+
+[ISSUES FOUND] Details of discovered problems:
+
+ImportError (41 issues):
+  File: ./Bench/experiments/VQEtest/test_vqe_bench_new.py
+  Module: vqe_config
+  Error: No module named 'vqe_config'
+
+  File: ./Bench/experiments/VQEtest/test_vqe_bench_new.py
+  Module: vqe_bench_new
+  Error: No module named 'vqe_bench_new'
+
+  File: ./Bench/scripts/run_benchmarks.py
+  Module: src.benchmark_harness.abstractions
+  Error: No module named 'src'
+
+  File: ./Bench/scripts/run_benchmarks.py
+  Module: src.benchmark_harness.caching
+  Error: No module named 'src'
+
+  File: ./Bench/scripts/run_benchmarks.py
+  Module: src.benchmark_harness.post_processing
+  Error: No module named 'src'
+
+  File: ./Bench/scripts/run_benchmarks.py
+  Module: src.benchmark_harness.simulators
+  Error: No module named 'src'
+
+  File: ./Bench/src/caching/cache_utils.py
+  Module: caching.cache_config
+  Error: No module named 'caching'
+
+  File: ./Bench/src/caching/cache_utils.py
+  Module: caching.hybrid_cache
+  Error: No module named 'caching'
+
+  File: ./Bench/src/caching/cache_utils.py
+  Module: caching.memory_cache
+  Error: No module named 'caching'
+
+  File: ./Bench/src/caching/cache_utils.py
+  Module: caching.disk_cache
+  Error: No module named 'caching'
+
+  File: ./Bench/src/caching/disk_cache.py
+  Module: src.abstractions
+  Error: No module named 'src'
+
+  File: ./Bench/src/caching/disk_cache.py
+  Module: caching.cache_utils
+  Error: No module named 'caching'
+
+  File: ./Bench/src/circuits/__init__.py
+  Module: circuits.qft
+  Error: No module named 'circuits'
+
+  File: ./Bench/src/circuits/__init__.py
+  Module: circuits.grover
+  Error: No module named 'circuits'
+
+  File: ./Bench/src/simulators/pennylane_wrapper.py
+  Module: src.metrics
+  Error: No module named 'src'
+
+  File: ./Bench/src/simulators/qiskit_wrapper.py
+  Module: qiskit.providers.aer
+  Error: No module named 'qiskit.providers.aer'
+
+  File: ./Bench/src/simulators/__init__.py
+  Module: simulators.qibo_wrapper
+  Error: No module named 'simulators'
+
+  File: ./Bench/src/simulators/__init__.py
+  Module: simulators.qiskit_wrapper
+  Error: No module named 'simulators'
+
+  File: ./Bench/src/simulators/__init__.py
+  Module: simulators.pennylane_wrapper
+  Error: No module named 'simulators'
+
+  File: ./Bench/tests/test_cache_config_fix.py
+  Module: src.benchmark_harness.caching.cache_config
+  Error: No module named 'src'
+
+  File: ./Bench/tests/test_caching_integration.py
+  Module: src.benchmark_harness.caching.memory_cache
+  Error: No module named 'src'
+
+  File: ./Bench/tests/test_caching_integration.py
+  Module: src.benchmark_harness.caching.disk_cache
+  Error: No module named 'src'
+
+  File: ./Bench/tests/test_caching_integration.py
+  Module: src.benchmark_harness.caching.hybrid_cache
+  Error: No module named 'src'
+
+  File: ./Bench/tests/test_integration.py
+  Module: src.benchmark_harness.circuits.qft
+  Error: No module named 'src'
+
+  File: ./Bench/tests/test_integration.py
+  Module: src.benchmark_harness.simulators.qibo_wrapper
+  Error: No module named 'src'
+
+  File: ./Bench/tests/test_metrics.py
+  Module: src.benchmark_harness.metrics
+  Error: No module named 'src'
+
+  File: ./Bench/tests/test_run_benchmarks.py
+  Module: run_benchmarks
+  Error: No module named 'run_benchmarks'
+
+  File: ./Bench/tests/test_simulators.py
+  Module: src.benchmark_harness.simulators.pennylane_wrapper
+  Error: No module named 'src'
+
+  File: ./Bench/tests/test_simulators.py
+  Module: src.benchmark_harness.simulators.qiskit_wrapper
+  Error: No module named 'src'
+
+  File: ./QASMBench/metrics/metric_plotter.py
+  Module: metrics.QMetric
+  Error: No module named 'metrics'
+
+  File: ./QASMBench/small/vqe.py
+  Module: qiskit.aqua.algorithms
+  Error: No module named 'qiskit.aqua'
+
+  File: ./qibobench/conftest.py
+  Module: qasmbench_runner
+  Error: No module named 'qasmbench_runner'
+
+  File: ./qibobench/qaoa_qibo_benchmark_with_qibojit.py
+  Module: torch
+  Error: No module named 'torch'
+
+  File: ./qibobench/qaoa_qibo_benchmark_with_qibojit.py
+  Module: jax
+  Error: No module named 'jax'
+
+  File: ./qibobench/qaoa_qibo_benchmark_with_qibojit.py
+  Module: tensorflow
+  Error: No module named 'tensorflow'
+
+  File: ./qibobench/test_qasmbench_runner.py
+  Module: conftest
+  Error: No module named 'conftest'
+
+  File: ./test/qibo_test_use/comple_test.py
+  Module: qibo_profiler
+  Error: No module named 'qibo_profiler'
+
+  File: ./test/test_backends.py
+  Module: qiboml
+  Error: No module named 'qiboml'
+
+  File: ./test/test_function/qibo_profiler.py
+  Module: cpuinfo
+  Error: No module named 'cpuinfo'
+
+  File: ./test/test_function/test_profiler.py
+  Module: jax.numpy
+  Error: No module named 'jax'
+
+  File: ./test/test_function/test_profiler_improvements.py
+  Module: qibo_profiler_improved
+  Error: No module named 'qibo_profiler_improved'
+
+
+================================================================================

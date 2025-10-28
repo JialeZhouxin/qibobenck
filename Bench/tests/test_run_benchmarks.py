@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+import sys
+import os
+
+# 添加Bench目录到Python路径
+bench_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, bench_dir)
 """
 run_benchmarks.py 的测试脚本
 
@@ -25,8 +31,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 导入要测试的模块
 import run_benchmarks as rb
-from benchmark_harness.abstractions import BenchmarkResult
-from benchmark_harness.caching import CacheConfig
+from src.abstractions import BenchmarkResult
+from src.caching import CacheConfig
 
 
 class TestRunBenchmarks(unittest.TestCase):
@@ -310,7 +316,7 @@ class TestRunBenchmarks(unittest.TestCase):
     
     def test_result_analysis(self):
         """测试结果分析功能"""
-        from benchmark_harness.post_processing import analyze_results
+        from src.post_processing import analyze_results
         
         # 创建模拟结果
         results = [

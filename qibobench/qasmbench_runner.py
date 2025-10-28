@@ -2,8 +2,18 @@
 # -*- coding: utf-8 -*-  # 指定文件编码为UTF-8
 
 """
-QASMBench通用基准测试工具
+QASMBench通用基准测试工具 - 支持后端选择版本
 支持加载QASMBench中的任意电路进行Qibo后端性能测试
+新增功能：支持选择性运行指定后端
+
+版本：v2.0 - 后端选择功能
+基于：qasmbench_runner.py
+修改时间：2025-10-13
+主要变更：
+- 添加 BackendConfig 数据类
+- 添加 BackendRegistry 注册器
+- 支持通过 --backends 参数选择后端
+- 添加后端状态查看功能
 """
 
 import time  # 导入time模块，用于计时和性能测量
@@ -21,6 +31,131 @@ import numpy as np  # 再次导入NumPy库（重复导入，可能是冗余的�
 import torch  # 导入PyTorch库，用于深度学习计算
 import jax  # 导入JAX库，用于高性能数值计算
 import tensorflow as tf  # 导入TensorFlow库，用于深度学习计算
+
+# 新增导入
+from dataclasses import dataclass
+from typing import Optional, Dict, Any, List
+import importlib
+
+@dataclass
+class BackendConfig:
+    """后端配置类"""
+    display_name: str           # 显示名称，如 "qibojit(numba)"
+    backend_name: str          # Qibo后端名称
+    platform_name: Optional[str]  # 平台名称
+    description: str           # 后端描述
+    dependencies: List[str]    # 依赖包列表
+    priority: int = 0          # 优先级（用于排序）
+    is_baseline: bool = False  # 是否为基准后端
+    
+    def validate(self) -> bool:
+        """验证后端是否可用"""
+        try:
+            for dep in self.dependencies:
+                importlib.import_module(dep)
+            return True
+        except ImportError:
+            return False
+
+class BackendRegistry:
+    """后端注册器"""
+    def __init__(self):
+        self._backends: Dict[str, BackendConfig] = {}
+    
+    def register(self, config: BackendConfig):
+        """注册新后端"""
+        self._backends[config.display_name] = config
+    
+    def get_available_backends(self) -> Dict[str, BackendConfig]:
+        """获取所有可用的后端"""
+        return {name: config for name, config in self._backends.items() 
+                if config.validate()}
+    
+    def get_backend(self, name: str) -> Optional[BackendConfig]:
+        """获取指定后端"""
+        return self._backends.get(name)
+    
+    def list_backend_names(self) -> List[str]:
+        """列出所有后端名称"""
+        return list(self._backends.keys())
+    
+    def get_baseline_backend(self) -> Optional[BackendConfig]:
+        """获取基准后端"""
+        for config in self._backends.values():
+            if config.is_baseline:
+                return config
+        return None
+
+# 全局后端注册器
+backend_registry = BackendRegistry()
+
+def register_default_backends():
+    """注册默认后端"""
+    default_configs = [
+        BackendConfig(
+            display_name="numpy",
+            backend_name="numpy",
+            platform_name=None,
+            description="NumPy后端（默认基准）",
+            dependencies=["numpy"],
+            is_baseline=True,
+            priority=0
+        ),
+        BackendConfig(
+            display_name="qibojit(numba)",
+            backend_name="qibojit",
+            platform_name="numba",
+            description="QiboJIT with Numba编译器",
+            dependencies=["numba"],
+            priority=1
+        ),
+        BackendConfig(
+            display_name="qibotn(qutensornet)",
+            backend_name="qibotn",
+            platform_name="qutensornet",
+            description="QiboTensorNetwork with Qutensornet",
+            dependencies=["Quimb"],
+            priority=2
+        ),
+        BackendConfig(
+            display_name="qiboml(jax)",
+            backend_name="qiboml",
+            platform_name="jax",
+            description="QiboML with JAX",
+            dependencies=["jax"],
+            priority=3
+        ),
+        BackendConfig(
+            display_name="qiboml(pytorch)",
+            backend_name="qiboml",
+            platform_name="pytorch",
+            description="QiboML with PyTorch",
+            dependencies=["torch"],
+            priority=4
+        ),
+        BackendConfig(
+            display_name="qiboml(tensorflow)",
+            backend_name="qiboml",
+            platform_name="tensorflow",
+            description="QiboML with TensorFlow",
+            dependencies=["tensorflow"],
+            priority=5
+        ),
+        BackendConfig(
+            display_name="qulacs",
+            backend_name="qulacs",
+            platform_name=None,
+            description="Qulacs后端",
+            dependencies=["qulacs"],
+            priority=6
+        )
+    ]
+    
+    for config in default_configs:
+        backend_registry.register(config)
+
+# 注册默认后端
+register_default_backends()
 
 class QASMBenchConfig:
     """QASMBench基准测试配置类
@@ -276,6 +411,7 @@ class QASMBenchRunner:
     def __init__(self, config):
         self.config = config
         self.results = {}
+        self.backend_registry = backend_registry  # 使用全局注册器
 
     def discover_qasm_circuits(self):
         """发现QASMBench中所有可用的电路"""
@@ -342,8 +478,43 @@ class QASMBenchRunner:
         """测量内存使用情况"""
         process = psutil.Process()
         return process.memory_info().rss / 1024 / 1024  # 转换为MB
-    
 
+    def _get_backend_configs_to_test(self, selected_backends=None):
+        """根据用户选择获取要测试的后端配置
+        
+        Args:
+            selected_backends: 用户选择的后端列表，None表示全部
+        
+        Returns:
+            要测试的后端配置字典
+        """
+        available_backends = self.backend_registry.get_available_backends()
+        
+        if selected_backends is None:
+            # 默认测试所有可用后端
+            return available_backends
+        
+        # 过滤用户选择的后端
+        filtered_configs = {}
+        for backend_key in selected_backends:
+            if backend_key in available_backends:
+                filtered_configs[backend_key] = available_backends[backend_key]
+            else:
+                print(f"⚠️ 警告: 未知后端 '{backend_key}'，已跳过")
+        
+        return filtered_configs
+
+    def _ensure_baseline_backend(self, backend_configs, selected_backends):
+        """确保基准后端存在（用于计算加速比）"""
+        baseline_config = self.backend_registry.get_baseline_backend()
+        if baseline_config and baseline_config.display_name not in backend_configs:
+            if selected_backends is not None:
+                print(f"⚠️ 警告: 未包含基准后端 '{baseline_config.display_name}'，将无法计算加速比")
+            else:
+                # 如果是默认测试所有后端，确保包含基准后端
+                backend_configs[baseline_config.display_name] = baseline_config
+        
+        return backend_configs
 
     def validate_correctness(self, result, baseline_result=None):
         """验证计算结果的正确性"""
@@ -418,44 +589,51 @@ class QASMBenchRunner:
             except Exception as e:
                 raise ValueError(f"无法将类型 {type(array)} 转换为NumPy数组: {str(e)}")
 
-
-    
-    def run_benchmark_for_circuit(self, circuit_name, qasm_file_path):
-        """为特定电路运行基准测试"""
+    def run_benchmark_for_circuit(self, circuit_name, qasm_file_path, selected_backends=None):
+        """为特定电路运行基准测试
+        
+        Args:
+            circuit_name: 电路名称
+            qasm_file_path: QASM文件路径
+            selected_backends: 要测试的后端列表，None表示测试所有后端
+        """
         print(f"\n{'='*80}")
         print(f"开始基准测试电路: {circuit_name}")
         print(f"电路文件: {qasm_file_path}")
         print('='*80)
         
+        # 获取要测试的后端配置
+        backend_configs = self._get_backend_configs_to_test(selected_backends)
+        backend_configs = self._ensure_baseline_backend(backend_configs, selected_backends)
+        
+        if not backend_configs:
+            print("❌ 错误: 没有有效的后端可供测试")
+            return {}
+        
+        print(f"将要测试的后端: {', '.join(backend_configs.keys())}")
+        
         results = {}
         baseline_result = None
         
-        # 后端配置
-        backend_configs = {
-            "numpy": {"backend_name": "numpy", "platform_name": None},
-            "qibojit (numba)": {"backend_name": "qibojit", "platform_name": "numba"},
-            "qibotn (qutensornet)": {"backend_name": "qibotn", "platform_name": "qutensornet"},
-            "qiboml (jax)": {"backend_name": "qiboml", "platform_name": "jax"},
-            "qiboml (pytorch)": {"backend_name": "qiboml", "platform_name": "pytorch"},
-            "qiboml (tensorflow)": {"backend_name": "qiboml", "platform_name": "tensorflow"},
-            "qulacs": {"backend_name": "qulacs", "platform_name": None}
-        }
-        
-        # 首先运行numpy后端作为基准
-        if "numpy" in backend_configs:
-            config = backend_configs["numpy"]
+        # 首先运行基准后端（如果存在）
+        baseline_config = self.backend_registry.get_baseline_backend()
+        if baseline_config and baseline_config.display_name in backend_configs:
+            config = backend_configs[baseline_config.display_name]
             result, metrics = self._run_single_backend_benchmark(
-                "numpy", config["backend_name"], config["platform_name"], qasm_file_path
+                baseline_config.display_name, 
+                config.backend_name, 
+                config.platform_name, 
+                qasm_file_path
             )
-            results["numpy"] = metrics
+            results[baseline_config.display_name] = metrics
             if result is not None:
                 baseline_result = result
         
         # 运行其他后端的基准测试
         for backend_key, config in backend_configs.items():
-            if backend_key != "numpy":  # 跳过已经运行的numpy后端
+            if backend_key != baseline_config.display_name:  # 跳过已经运行的基准后端
                 result, metrics = self._run_single_backend_benchmark(
-                    backend_key, config["backend_name"], config["platform_name"], 
+                    backend_key, config.backend_name, config.platform_name, 
                     qasm_file_path, baseline_result
                 )
                 results[backend_key] = metrics
@@ -465,7 +643,6 @@ class QASMBenchRunner:
         
         return results
 
-    
     def _run_single_backend_benchmark(self, backend_key, backend_name, platform_name, qasm_file_path, baseline_result=None):
         """为单个后端运行基准测试"""
         metrics = QASMBenchMetrics()
@@ -572,20 +749,22 @@ class QASMBenchRunner:
             metrics.correctness = "Failed"
             return None, metrics
 
-    
     def _calculate_speedup(self, results):
         """计算相对于基准后端的加速比"""
+        baseline_config = self.backend_registry.get_baseline_backend()
+        if not baseline_config:
+            return
+        
         baseline_time = None
+        baseline_name = baseline_config.display_name
         
         # 查找基准后端的执行时间
-        for backend_name, metrics in results.items():
-            if backend_name == self.config.baseline_backend and metrics.execution_time_mean:
-                baseline_time = metrics.execution_time_mean
-                break
+        if baseline_name in results and results[baseline_name].execution_time_mean:
+            baseline_time = results[baseline_name].execution_time_mean
         
         if baseline_time:
             for backend_name, metrics in results.items():
-                if metrics.execution_time_mean and backend_name != self.config.baseline_backend:
+                if metrics.execution_time_mean and backend_name != baseline_name:
                     metrics.speedup = baseline_time / metrics.execution_time_mean
     
     def generate_reports(self, results, circuit_name, circuit=None):
@@ -702,8 +881,78 @@ def find_circuit_by_name(circuit_name):
     print("💡 提示: 使用 --list 参数查看所有可用电路")
     return None
 
-def run_benchmark_for_circuit(circuit_path):
-    """为指定电路路径运行基准测试"""
+def parse_backend_string(backend_string):
+    """解析后端字符串为列表
+    
+    Args:
+        backend_string: 后端字符串，如 "qibojit(numba)" 或 "numpy,qibojit(numba)"
+    
+    Returns:
+        后端名称列表，None表示全部
+    """
+    if not backend_string or backend_string.strip() == "":
+        return None
+    
+    # 支持逗号分隔的多个后端
+    backends = [b.strip() for b in backend_string.split(',') if b.strip()]
+    return backends if backends else None
+
+def list_available_backends():
+    """列出所有可用的后端"""
+    available_backends = backend_registry.get_available_backends()
+    baseline_config = backend_registry.get_baseline_backend()
+    
+    print("可用的Qibo后端:")
+    print("="*80)
+    
+    if not available_backends:
+        print("❌ 没有可用的后端")
+        return
+    
+    # 按优先级排序
+    sorted_backends = sorted(available_backends.items(), key=lambda x: x[1].priority)
+    
+    for name, config in sorted_backends:
+        status = "✅ 可用" if config.validate() else "❌ 不可用"
+        baseline_marker = " (基准)" if config.is_baseline else ""
+        print(f"  {name}{baseline_marker}")
+        print(f"    描述: {config.description}")
+        print(f"    状态: {status}")
+        if config.dependencies:
+            print(f"    依赖: {', '.join(config.dependencies)}")
+        print()
+
+def list_backend_status():
+    """列出所有后端的详细状态"""
+    all_backends = backend_registry._backends
+    
+    print("后端状态详情:")
+    print("="*80)
+    
+    for name, config in all_backends.items():
+        print(f"\n🔍 {name}")
+        print(f"   后端名称: {config.backend_name}")
+        print(f"   平台名称: {config.platform_name or 'None'}")
+        print(f"   描述: {config.description}")
+        print(f"   依赖: {', '.join(config.dependencies)}")
+        
+        # 验证状态
+        try:
+            is_available = config.validate()
+            if is_available:
+                print(f"   状态: ✅ 可用")
+            else:
+                print(f"   状态: ❌ 不可用 (缺少依赖)")
+        except Exception as e:
+            print(f"   状态: ❌ 错误 ({str(e)})")
+
+def run_benchmark_for_circuit(circuit_path, selected_backends=None):
+    """为指定电路路径运行基准测试
+    
+    Args:
+        circuit_path: QASM文件路径
+        selected_backends: 要测试的后端列表，None表示测试所有后端
+    """
     if not os.path.exists(circuit_path):
         print(f"错误: 电路文件不存在: {circuit_path}")
         return None
@@ -716,6 +965,8 @@ def run_benchmark_for_circuit(circuit_path):
     
     print(f"🚀 开始QASMBench基准测试: {circuit_name}")
     print(f"电路文件: {circuit_path}")
+    if selected_backends:
+        print(f"指定后端: {', '.join(selected_backends)}")
     print('='*80)
     
     circuit = runner.load_qasm_circuit(circuit_path)
@@ -723,7 +974,7 @@ def run_benchmark_for_circuit(circuit_path):
         print(f"错误: 无法加载电路 {circuit_name}")
         return None
     
-    results = runner.run_benchmark_for_circuit(circuit_name, circuit_path)
+    results = runner.run_benchmark_for_circuit(circuit_name, circuit_path, selected_backends)
     
     # 生成报告
     runner.generate_reports(results, circuit_name, circuit)
@@ -754,23 +1005,35 @@ def run_benchmark_for_circuit(circuit_path):
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description='QASMBench电路基准测试工具')
+    parser = argparse.ArgumentParser(description='QASMBench电路基准测试工具 - 支持后端选择')
     parser.add_argument('--list', action='store_true', help='列出所有可用电路')
+    parser.add_argument('--list-backends', action='store_true', help='列出所有可用后端')
+    parser.add_argument('--backend-status', action='store_true', help='显示后端详细状态')
     parser.add_argument('--circuit', type=str, help='指定QASM电路文件的完整路径进行基准测试')
+    parser.add_argument('--backends', type=str, help='指定要测试的后端，用逗号分隔，如 "qibojit(numba)" 或 "numpy,qibojit(numba)"')
     
     args = parser.parse_args()
     
     if args.list:
         list_available_circuits()
+    elif args.list_backends:
+        list_available_backends()
+    elif args.backend_status:
+        list_backend_status()
     elif args.circuit:
-        run_benchmark_for_circuit(args.circuit)
-
+        selected_backends = parse_backend_string(args.backends)
+        run_benchmark_for_circuit(args.circuit, selected_backends)
     else:
         print("使用方法:")
-        print("  python qasmbench_runner.py --list                    # 列出所有电路")
-        print("  python qasmbench_runner.py --circuit <文件路径>      # 测试指定电路")
-
+        print("  python qasmbench_runner_backend_selection.py --list                    # 列出所有电路")
+        print("  python qasmbench_runner_backend_selection.py --list-backends          # 列出所有后端")
+        print("  python qasmbench_runner_backend_selection.py --backend-status         # 显示后端状态")
+        print("  python qasmbench_runner_backend_selection.py --circuit <文件路径>      # 测试指定电路")
+        print("  python qasmbench_runner_backend_selection.py --circuit <文件路径> --backends <后端列表>  # 测试指定后端")
+        
         print("\n示例:")
-        print("  python qasmbench_runner.py --list")
-
-        print("  python qasmbench_runner.py --circuit QASMBench/medium/qft_n18/qft_n18.qasm")
+        print("  python qasmbench_runner_backend_selection.py --list")
+        print("  python qasmbench_runner_backend_selection.py --list-backends")
+        print("  python qasmbench_runner_backend_selection.py --circuit QASMBench/medium/qft_n18/qft_n18.qasm")
+        print("  python qasmbench_runner_backend_selection.py --circuit QASMBench/medium/qft_n18/qft_n18.qasm --backends \"qibojit(numba)\"")
+        print("  python qasmbench_runner_backend_selection.py --circuit QASMBench/medium/qft_n18/qft_n18.qasm --backends \"numpy,qibojit(numba),qiboml(jax)\"")

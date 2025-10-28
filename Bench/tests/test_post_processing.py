@@ -1,4 +1,10 @@
 """
+import sys
+import os
+
+# 添加Bench目录到Python路径
+bench_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, bench_dir)
 测试后处理模块
 """
 
@@ -9,8 +15,8 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from benchmark_harness.abstractions import BenchmarkResult
-from benchmark_harness.post_processing import (analyze_results,
+from src.abstractions import BenchmarkResult
+from src.post_processing import (analyze_results,
                                                generate_summary_report)
 
 

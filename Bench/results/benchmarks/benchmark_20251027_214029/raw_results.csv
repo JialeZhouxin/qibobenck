@@ -1,0 +1,8 @@
+simulator,backend,circuit_name,n_qubits,wall_time_sec,wall_time_std,cpu_time_sec,cpu_time_std,peak_memory_mb,memory_std,cpu_utilization_percent,state_fidelity,fidelity_std,repeat,circuit_depth,total_gates,circuit_summary,runner_id
+qibo,numpy,qft_4_qubits,4,0.001053999993018806,0.0,0.0,0.0,0.01128387451171875,0.0,0.0,1.0,0.0,1,8,12,"Circuit depth = 8
+Total number of gates = 12
+Number of qubits = 4
+Most common gates:
+cu1: 6
+h: 4
+swap: 2",qibo-numpy

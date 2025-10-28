@@ -1,4 +1,10 @@
 """
+import sys
+import os
+
+# 添加Bench目录到Python路径
+bench_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, bench_dir)
 集成测试
 
 这个模块包含了不同组件之间协同工作的测试用例。
@@ -7,8 +13,8 @@
 import numpy as np
 import pytest
 
-from benchmark_harness.circuits.qft import QFTCircuit
-from benchmark_harness.simulators.qibo_wrapper import QiboWrapper
+from src.circuits.qft import QFTCircuit
+from src.simulators.qibo_wrapper import QiboWrapper
 
 
 class TestQiboIntegration:

@@ -6,11 +6,17 @@
 
 import numpy as np
 import pytest
+import sys
+import os
 
-from benchmark_harness.circuits.qft import QFTCircuit
-from benchmark_harness.simulators.pennylane_wrapper import PennyLaneWrapper
-from benchmark_harness.simulators.qibo_wrapper import QiboWrapper
-from benchmark_harness.simulators.qiskit_wrapper import QiskitWrapper
+# 添加Bench目录到Python路径
+bench_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, bench_dir)
+
+from src.circuits.qft import QFTCircuit
+from src.simulators.pennylane_wrapper import PennyLaneWrapper
+from src.simulators.qibo_wrapper import QiboWrapper
+from src.simulators.qiskit_wrapper import QiskitWrapper
 
 
 class TestQiboWrapper:

@@ -1,4 +1,10 @@
 """
+import sys
+import os
+
+# 添加Bench目录到Python路径
+bench_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, bench_dir)
 指标收集器测试
 
 这个模块包含了MetricsCollector类的测试用例。
@@ -8,7 +14,7 @@ import time
 
 import pytest
 
-from benchmark_harness.metrics import MetricsCollector
+from src.metrics import MetricsCollector
 
 
 def test_metrics_collector_context_manager():

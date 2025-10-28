@@ -1,4 +1,10 @@
 """
+import sys
+import os
+
+# 添加Bench目录到Python路径
+bench_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, bench_dir)
 重复运行功能的基本测试
 
 这个模块包含了对重复运行功能的基本测试用例，
@@ -15,8 +21,8 @@ from unittest.mock import patch, MagicMock
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from benchmark_harness.abstractions import BenchmarkResult
-from benchmark_harness.post_processing import analyze_results, generate_summary_report
+from src.abstractions import BenchmarkResult
+from src.post_processing import analyze_results, generate_summary_report
 
 
 def test_benchmark_result_with_repeat_data():

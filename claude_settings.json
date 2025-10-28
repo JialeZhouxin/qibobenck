@@ -1,0 +1,23 @@
+{
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep",
+    "WebSearch",
+    "TodoWrite",
+    "Task",
+    "NotebookEdit",
+    "KillShell",
+    "BashOutput",
+    "AskUserQuestion",
+    "SlashCommand",
+    "Skill",
+    "ExitPlanMode"
+  ],
+  "permissionMode": "acceptEdits",
+  "autoApproveEdits": true,
+  "bypassPermissions": false
+}

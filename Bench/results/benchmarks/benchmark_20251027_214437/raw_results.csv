@@ -1,0 +1,36 @@
+simulator,backend,circuit_name,n_qubits,wall_time_sec,wall_time_std,cpu_time_sec,cpu_time_std,peak_memory_mb,memory_std,cpu_utilization_percent,state_fidelity,fidelity_std,repeat,circuit_depth,total_gates,circuit_summary,runner_id
+qibo,qibojit,qft_2_qubits,2,0.0004016333647693197,2.0884005520644023e-05,0.005208333333333333,0.009021097956087904,0.0013885498046875,0.00011745303587601206,0.0,0.9999999999999991,0.0,3,4,4,"Circuit depth = 4
+Total number of gates = 4
+Number of qubits = 2
+Most common gates:
+h: 2
+cu1: 1
+swap: 1",qibo-qibojit
+qibo,qibojit,qft_3_qubits,3,0.0005327999824658036,0.00010343260801895312,0.0,0.0,0.0015347798665364583,9.817442905150155e-05,0.0,0.9999999999999991,0.0,3,6,7,"Circuit depth = 6
+Total number of gates = 7
+Number of qubits = 3
+Most common gates:
+h: 3
+cu1: 3
+swap: 1",qibo-qibojit
+qibo,qibojit,qft_4_qubits,4,0.0008541000230858723,0.00015726654521735863,0.0,0.0,0.002028783162434896,0.00012663894835816757,0.0,0.9999999999999987,0.0,3,8,12,"Circuit depth = 8
+Total number of gates = 12
+Number of qubits = 4
+Most common gates:
+cu1: 6
+h: 4
+swap: 2",qibo-qibojit
+qibo,qibojit,qft_5_qubits,5,0.0008937666813532511,2.1628751926821934e-05,0.0,0.0,0.001998265584309896,0.00022062742260151548,0.0,0.9999999999999986,1.3597399555105182e-16,3,10,17,"Circuit depth = 10
+Total number of gates = 17
+Number of qubits = 5
+Most common gates:
+cu1: 10
+h: 5
+swap: 2",qibo-qibojit
+qibo,qibojit,qft_6_qubits,6,0.0016227999391655128,0.0002705555650945769,0.0,0.0,0.002780914306640625,0.00021160182811824437,0.0,0.9999999999999982,0.0,3,12,24,"Circuit depth = 12
+Total number of gates = 24
+Number of qubits = 6
+Most common gates:
+cu1: 15
+h: 6
+swap: 3",qibo-qibojit

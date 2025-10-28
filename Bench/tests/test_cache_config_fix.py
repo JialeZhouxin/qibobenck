@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
+import sys
+import os
+
+# 添加Bench目录到Python路径
+bench_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, bench_dir)
 """
 测试缓存配置修复的脚本
 """
 
-from benchmark_harness.caching.cache_config import CacheConfig, DISK_ONLY_CONFIG
+from src.caching.cache_config import CacheConfig, DISK_ONLY_CONFIG
 
 def test_disk_only_config():
     """测试纯磁盘配置可以正常创建"""

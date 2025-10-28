@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+import sys
+import os
+
+# 添加Bench目录到Python路径
+bench_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, bench_dir)
 """
 完整缓存系统测试脚本
 
@@ -128,7 +134,7 @@ def test_cache_config_validation():
     
     try:
         # 测试磁盘缓存可以使用0内存缓存
-        from benchmark_harness.caching.cache_config import CacheConfig
+        from src.caching.cache_config import CacheConfig
         
         config = CacheConfig(cache_type="disk", memory_cache_size=0)
         print(f"✓ 磁盘缓存配置验证成功: cache_type={config.cache_type}, memory_cache_size={config.memory_cache_size}")

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+import sys
+import os
+
+# 添加Bench目录到Python路径
+bench_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, bench_dir)
 """
 缓存集成测试脚本
 
@@ -14,10 +20,10 @@ from pathlib import Path
 # 添加当前目录到Python路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from benchmark_harness.caching import CacheConfig, create_cache_instance
-from benchmark_harness.caching.memory_cache import MemoryReferenceStateCache
-from benchmark_harness.caching.disk_cache import PersistentReferenceStateCache
-from benchmark_harness.caching.hybrid_cache import HybridReferenceStateCache
+from src.caching import CacheConfig, create_cache_instance
+from src.caching.memory_cache import MemoryReferenceStateCache
+from src.caching.disk_cache import PersistentReferenceStateCache
+from src.caching.hybrid_cache import HybridReferenceStateCache
 
 
 def test_memory_cache():
